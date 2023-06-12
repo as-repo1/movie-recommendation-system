@@ -2,7 +2,7 @@
 
 ## **About**
 
-This code is used to process movie data from two different CSV files and merge them into one using the title of the movies. It then selects specific features and processes them to prepare for the vectorization of text. The goal of this is to create a content-based recommendation system for movies.
+This project is used to process movie data from two different CSV files and merge them into one using the title of the movies. It then selects specific features and processes them to prepare for the vectorization of text. The goal of this is to create a content-based recommendation system for movies.
 
 ## **Requirements**
 
