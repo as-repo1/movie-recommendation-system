@@ -2,7 +2,7 @@
 
 This documentation outlines the implementation of a Movie Recommendation System using content-based filtering. The system suggests movies similar to a given movie based on shared attributes such as genres, keywords, cast, and crew.
 
-##TO-DO
+## TO-DO
 - web implementation
 
 ## Table of Contents
