@@ -1,4 +1,4 @@
-# Movie Recommendation System Documentation
+# Movie Recommendation System
 
 This is the implementation of a Movie Recommendation System using content-based filtering. The system suggests movies similar to a given movie based on shared attributes such as genres, keywords, cast, and crew.
 
