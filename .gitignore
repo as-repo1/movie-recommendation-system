@@ -1,0 +1,27 @@
+# ── Generated model files (run scripts/build_model.py to regenerate) ────────
+data/processed/
+
+# ── Unzipped CSVs (regenerated from archives) ────────────────────────────────
+data/raw/*.csv
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Environment ───────────────────────────────────────────────────────────────
+.env
+.env.local
+venv/
+.venv/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
