@@ -1,11 +1,13 @@
-package com.cinematch.ui.home
+package com.reclens.ui.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cinematch.data.api.Movie
-import com.cinematch.data.api.PersonalisedRequest
-import com.cinematch.data.api.RatedMovie
-import com.cinematch.data.api.RetrofitClient
+import com.reclens.data.api.Movie
+import com.reclens.data.api.PersonalisedRequest
+import com.reclens.data.api.RatedMovie
+import com.reclens.data.api.RetrofitClient
+import com.reclens.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,20 +18,26 @@ sealed class HomeUiState {
     data class Error(val message: String) : HomeUiState()
 }
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState
 
     fun load(ratedMovies: List<Pair<Int, Float>>) {
         viewModelScope.launch {
+            _uiState.value = HomeUiState.Loading
             try {
-                val popular = RetrofitClient.api.getPopular()
+                val context = getApplication<Application>().applicationContext
+                val api = RetrofitClient.getApi(context)
+                val settings = SettingsRepository(context)
+                val limit = settings.getRecommendationCount()
+
+                val popular = api.getPopular(page = 1)
                 val personalised = if (ratedMovies.isNotEmpty()) {
                     try {
-                        RetrofitClient.api.getPersonalised(
+                        api.getPersonalised(
                             PersonalisedRequest(
                                 ratings = ratedMovies.map { RatedMovie(it.first, it.second) },
-                                n = 12
+                                n = limit
                             )
                         ).recommendations
                     } catch (e: Exception) {
@@ -39,7 +47,7 @@ class HomeViewModel : ViewModel() {
 
                 _uiState.value = HomeUiState.Success(popular, personalised)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = HomeUiState.Error(e.message ?: "Failed to connect to backend server")
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.cinematch.ui.search
+package com.reclens.ui.search
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -10,11 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cinematch.data.repository.WatchlistRepository
-import com.cinematch.data.repository.WatchedRepository
-import com.cinematch.ui.components.MovieCard
-import com.cinematch.ui.components.MovieCardSkeleton
-import com.cinematch.ui.theme.TextMuted
+import com.reclens.data.repository.WatchlistRepository
+import com.reclens.data.repository.WatchedRepository
+import com.reclens.ui.components.MovieCard
+import com.reclens.ui.components.MovieCardSkeleton
+import com.reclens.ui.theme.TextMuted
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchScreen(
@@ -26,6 +27,8 @@ fun SearchScreen(
     val query by vm.query.collectAsState()
     val results by vm.results.collectAsState()
     val loading by vm.loading.collectAsState()
+    val scope = rememberCoroutineScope()
+    var localWatchlistVersion by remember { mutableIntStateOf(0) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         OutlinedTextField(
@@ -36,6 +39,10 @@ fun SearchScreen(
             leadingIcon = { Icon(Icons.Default.Search, null) },
             singleLine = true,
             shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+            )
         )
 
         Spacer(Modifier.height(16.dp))
@@ -56,23 +63,31 @@ fun SearchScreen(
             }
 
             results.isNotEmpty() -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(results) { movie ->
-                        MovieCard(
-                            movie = movie,
-                            isInWatchlist = watchlistRepo.isInWatchlist(movie.id),
-                            myRating = watchedRepo.getRating(movie.id),
-                            onWatchlistToggle = {
-                                if (watchlistRepo.isInWatchlist(movie.id))
-                                    watchlistRepo.removeFromWatchlist(movie.id)
-                                else watchlistRepo.addToWatchlist(movie.id)
-                            },
-                            onClick = { onMovieClick(movie.id) }
-                        )
+                // Key the grid with localWatchlistVersion to force recomposition when watchlist items are toggled
+                key(localWatchlistVersion) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(results, key = { it.id }) { movie ->
+                            MovieCard(
+                                movie = movie,
+                                isInWatchlist = watchlistRepo.isInWatchlist(movie.id),
+                                myRating = watchedRepo.getRating(movie.id),
+                                onWatchlistToggle = {
+                                    scope.launch {
+                                        if (watchlistRepo.isInWatchlist(movie.id)) {
+                                            watchlistRepo.removeFromWatchlist(movie.id)
+                                        } else {
+                                            watchlistRepo.addToWatchlist(movie.id)
+                                        }
+                                        localWatchlistVersion++
+                                    }
+                                },
+                                onClick = { onMovieClick(movie.id) }
+                            )
+                        }
                     }
                 }
             }

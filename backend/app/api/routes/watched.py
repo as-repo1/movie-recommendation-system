@@ -74,7 +74,7 @@ async def add_watched(
 
     if existing:
         existing.rating = body.rating
-        existing.added_at = datetime.now(timezone.utc)
+        existing.added_at = datetime.now(timezone.utc).replace(tzinfo=None)
     else:
         db.add(WatchedMovie(
             session_id=session_id,

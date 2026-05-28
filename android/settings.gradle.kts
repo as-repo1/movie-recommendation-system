@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CineMatch"
+rootProject.name = "RecLens"
 include(":app")

@@ -1,4 +1,4 @@
-package com.cinematch.ui.components
+package com.reclens.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,16 +16,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.cinematch.data.api.Movie
-import com.cinematch.ui.theme.Gold
-import com.cinematch.ui.theme.Purple80
-import com.cinematch.ui.theme.Surface
-import com.cinematch.ui.theme.TextMuted
-import com.cinematch.ui.theme.TextPrimary
+import com.reclens.data.api.Movie
+import com.reclens.ui.theme.Gold
+import com.reclens.ui.theme.TextMuted
 
 @Composable
 fun MovieCard(
@@ -40,14 +38,14 @@ fun MovieCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        elevation = CardDefaults.cardElevation(4.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
             // Poster
             Box(modifier = Modifier.aspectRatio(2f / 3f)) {
                 AsyncImage(
-                    model = movie.posterUrl.ifEmpty { "https://via.placeholder.com/300x450/1a1a2e/8b5cf6?text=No+Poster" },
+                    model = movie.posterUrl.ifEmpty { "https://via.placeholder.com/300x450/2e3440/88c0d0?text=No+Poster" },
                     contentDescription = movie.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -58,19 +56,19 @@ fun MovieCard(
                     onClick = onWatchlistToggle,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(4.dp)
+                        .padding(6.dp)
                         .size(32.dp)
                         .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
                 ) {
                     Icon(
                         imageVector = if (isInWatchlist) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                         contentDescription = "Watchlist",
-                        tint = if (isInWatchlist) Purple80 else TextMuted,
+                        tint = if (isInWatchlist) MaterialTheme.colorScheme.primary else TextMuted,
                         modifier = Modifier.size(16.dp)
                     )
                 }
 
-                // Rating badge at bottom
+                // Rating badge at bottom (Custom User Rating)
                 if (myRating != null) {
                     Box(
                         modifier = Modifier
@@ -85,40 +83,48 @@ fun MovieCard(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Star, null, tint = Gold, modifier = Modifier.size(12.dp))
-                            Spacer(Modifier.width(2.dp))
-                            Text("${"%.1f".format(myRating)}", color = Color(0xFFFCD34D), fontSize = 11.sp)
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "${"%.1f".format(myRating)}", 
+                                color = Gold, 
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
 
-            // Info
+            // Movie Information
             Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Text(
                     text = movie.title,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = movie.year?.toString() ?: "",
+                        text = movie.year?.toString() ?: "N/A",
                         color = TextMuted,
                         style = MaterialTheme.typography.labelSmall
                     )
                     if (movie.voteAverage > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Star, null, tint = Gold, modifier = Modifier.size(10.dp))
+                            Spacer(Modifier.width(2.dp))
                             Text(
-                                text = " ${"%.1f".format(movie.voteAverage)}",
-                                color = Color(0xFFFCD34D),
-                                style = MaterialTheme.typography.labelSmall
+                                text = "${"%.1f".format(movie.voteAverage)}",
+                                color = Gold,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
@@ -133,13 +139,13 @@ fun MovieCardSkeleton() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .aspectRatio(2f / 3f)
-                    .background(Color(0xFF252540))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
             )
             Column(modifier = Modifier.padding(10.dp)) {
                 Box(
@@ -147,7 +153,7 @@ fun MovieCardSkeleton() {
                         .fillMaxWidth()
                         .height(12.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF252540))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
                 )
                 Spacer(Modifier.height(6.dp))
                 Box(
@@ -155,7 +161,7 @@ fun MovieCardSkeleton() {
                         .fillMaxWidth(0.5f)
                         .height(10.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF1E1E36))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                 )
             }
         }

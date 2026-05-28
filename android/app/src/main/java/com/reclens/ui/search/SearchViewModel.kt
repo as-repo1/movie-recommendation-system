@@ -1,15 +1,16 @@
-package com.cinematch.ui.search
+package com.reclens.ui.search
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cinematch.data.api.Movie
-import com.cinematch.data.api.RetrofitClient
+import com.reclens.data.api.Movie
+import com.reclens.data.api.RetrofitClient
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-class SearchViewModel : ViewModel() {
+class SearchViewModel(application: Application) : AndroidViewModel(application) {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
 
@@ -27,7 +28,8 @@ class SearchViewModel : ViewModel() {
                 .collect { q ->
                     _loading.value = true
                     try {
-                        _results.value = RetrofitClient.api.search(q).movies
+                        val api = RetrofitClient.getApi(getApplication())
+                        _results.value = api.search(q).movies
                     } catch (e: Exception) {
                         _results.value = emptyList()
                     } finally {
