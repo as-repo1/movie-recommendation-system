@@ -1,0 +1,334 @@
+/* ═══════════════════════════════════════════════════════════════
+   RecLens — Nord Theme System
+   Dark:  Polar Night bg  + Snow Storm text + Frost accents
+   Light: Snow Storm bg   + Polar Night text + Frost accents
+   ═══════════════════════════════════════════════════════════════ */
+
+/* System font stack while Inter loads — same x-height, no layout shift */
+:root {
+  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* ── Nord Frost (shared accents) ── */
+  --nord-frost-1:   #8FBCBB;   /* teal         */
+  --nord-frost-2:   #88C0D0;   /* sky blue      */
+  --nord-frost-3:   #81A1C1;   /* steel blue    */
+  --nord-frost-4:   #5E81AC;   /* deep blue     */
+
+  /* ── Nord Aurora (shared) ── */
+  --nord-red:     #BF616A;
+  --nord-orange:  #D08770;
+  --nord-yellow:  #EBCB8B;
+  --nord-green:   #A3BE8C;
+  --nord-purple:  #B48EAD;
+
+  /* ── Transition ── */
+  --theme-transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+/* ── DARK THEME (default) ── */
+[data-theme="dark"] {
+  --bg-primary:    #2E3440;   /* Polar Night 1 */
+  --bg-surface:    #3B4252;   /* Polar Night 2 */
+  --bg-card:       #3B4252;   /* Polar Night 2 */
+  --bg-card-hover: #434C5E;   /* Polar Night 3 */
+  --bg-nav:        rgba(46, 52, 64, 0.92);
+
+  --accent:        #88C0D0;   /* Frost 2 — primary accent */
+  --accent-dim:    #5E81AC;   /* Frost 4 — dimmer */
+  --accent-warm:   #B48EAD;   /* Aurora purple */
+
+  --text-primary:  #ECEFF4;   /* Snow Storm 3  */
+  --text-muted:    #D8DEE9;   /* Snow Storm 1  */
+  --text-faint:    #4C566A;   /* Polar Night 4 */
+
+  --border:        rgba(216, 222, 233, 0.1);
+  --border-accent: rgba(136, 192, 208, 0.3);
+
+  --skeleton-base:    #3B4252;
+  --skeleton-shine:   #434C5E;
+
+  --glow: 0 0 24px rgba(136, 192, 208, 0.2);
+
+  --badge-bg:      rgba(136, 192, 208, 0.12);
+  --badge-text:    #88C0D0;
+  --badge-border:  rgba(136, 192, 208, 0.3);
+
+  --star-color:    #EBCB8B;
+  --hero-gradient: radial-gradient(ellipse at 50% 0%, rgba(136,192,208,0.12) 0%, transparent 65%);
+  --card-shadow:   0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg-primary:    #ECEFF4;   /* Snow Storm 3  */
+  --bg-surface:    #E5E9F0;   /* Snow Storm 2  */
+  --bg-card:       #E5E9F0;   /* Snow Storm 2  */
+  --bg-card-hover: #D8DEE9;   /* Snow Storm 1  */
+  --bg-nav:        rgba(236, 239, 244, 0.92);
+
+  --accent:        #5E81AC;   /* Frost 4 — more readable on light */
+  --accent-dim:    #81A1C1;   /* Frost 3 */
+  --accent-warm:   #B48EAD;   /* Aurora purple */
+
+  --text-primary:  #2E3440;   /* Polar Night 1 */
+  --text-muted:    #3B4252;   /* Polar Night 2 */
+  --text-faint:    #4C566A;   /* Polar Night 4 */
+
+  --border:        rgba(46, 52, 64, 0.1);
+  --border-accent: rgba(94, 129, 172, 0.3);
+
+  --skeleton-base:    #D8DEE9;
+  --skeleton-shine:   #E5E9F0;
+
+  --glow: 0 0 24px rgba(94, 129, 172, 0.15);
+
+  --badge-bg:      rgba(94, 129, 172, 0.12);
+  --badge-text:    #5E81AC;
+  --badge-border:  rgba(94, 129, 172, 0.3);
+
+  --star-color:    #D08770;   /* Aurora orange on light */
+  --hero-gradient: radial-gradient(ellipse at 50% 0%, rgba(94,129,172,0.1) 0%, transparent 65%);
+  --card-shadow:   0 2px 12px rgba(46, 52, 64, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: var(--theme-transition);
+  /* Prevent FOUT by keeping layout stable */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+#root { min-height: 100vh; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SKELETON SHIMMER  — no JS flicker, pure CSS
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base)  0%,
+    var(--skeleton-shine) 40%,
+    var(--skeleton-base)  80%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+  /* Stabilise to avoid reflows during font load */
+  will-change: background-position;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GENRE BADGE
+   ═══════════════════════════════════════════════════════════════ */
+.genre-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1px solid var(--badge-border);
+  transition: var(--theme-transition);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOVIE CARD  — hover lift + glow
+   ═══════════════════════════════════════════════════════════════ */
+.movie-card {
+  display: block;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.movie-card:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-card-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOVIE POSTER  — aspect-ratio locked, no layout shift
+   ═══════════════════════════════════════════════════════════════ */
+.poster-wrap {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.poster-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Fade in once loaded — prevents jarring pop-in */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.poster-wrap img.loaded {
+  opacity: 1;
+}
+
+/* SVG placeholder — shown before/instead of image */
+.poster-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 12px;
+  text-align: center;
+}
+.poster-placeholder svg {
+  opacity: 0.35;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: none;
+  font-family: var(--font-body);
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--badge-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH INPUT
+   ═══════════════════════════════════════════════════════════════ */
+.search-input {
+  width: 100%;
+  padding: 14px 48px 14px 48px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(136, 192, 208, 0.15);
+}
+.search-input::placeholder { color: var(--text-faint); }
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME TOGGLE
+   ═══════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  font-family: var(--font-body);
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID LAYOUTS
+   ═══════════════════════════════════════════════════════════════ */
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION HEADINGS
+   ═══════════════════════════════════════════════════════════════ */
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STAR RATING
+   ═══════════════════════════════════════════════════════════════ */
+.star { cursor: pointer; transition: transform 0.15s, color 0.15s; }
+.star:hover { transform: scale(1.25); }

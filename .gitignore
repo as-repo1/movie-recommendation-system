@@ -1,8 +1,11 @@
-# ── Generated model files (run scripts/build_model.py to regenerate) ────────
+# ── Generated model files ─────────────────────────────────────────────────────
 data/processed/
 
-# ── Unzipped CSVs (regenerated from archives) ────────────────────────────────
+# ── Unzipped CSVs & MovieLens datasets ───────────────────────────────────────
 data/raw/*.csv
+data/raw/ml-1m/
+data/raw/ml-32m/
+data/raw/*.zip
 
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
@@ -12,16 +15,38 @@ __pycache__/
 dist/
 build/
 .eggs/
+.venv/
+venv/
 
 # ── Jupyter ───────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
 
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── Android ───────────────────────────────────────────────────────────────────
+android/.gradle/
+android/build/
+android/app/build/
+android/*.keystore
+android/local.properties
+
 # ── Environment ───────────────────────────────────────────────────────────────
 .env
 .env.local
-venv/
-.venv/
+.env.production
 
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+data/*.sqlite
+data/*.db
+data/*.sqlite3
+*.sqlite
+*.db
+*.sqlite3
+

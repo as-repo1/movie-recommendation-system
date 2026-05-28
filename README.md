@@ -106,6 +106,37 @@ Open `http://localhost:8501`.
 
 ---
 
+## Running with Docker Compose (Recommended)
+
+To run the complete **RecLens** stack (FastAPI Backend + React Frontend + PostgreSQL Database + Nginx Proxy) containerized:
+
+### 1. Build and Start the Services
+First, ensure that the model datasets have been built (see *Build the model* section). Then run:
+
+```bash
+docker compose up -d
+```
+
+This command will:
+- Spin up a PostgreSQL database container.
+- Build the FastAPI backend container (installing systems requirements like `gcc`, `pyarrow`, and `lightfm`).
+- Build the React production bundle and serve it via static `serve` on port 5173.
+- Start an Nginx reverse proxy on port 80 routing `/` to the frontend and `/api` to the backend.
+
+### 2. Access Points
+- **Web Application UI**: [http://localhost/](http://localhost/)
+- **FastAPI Interactive Documentation**: [http://localhost/docs](http://localhost/docs)
+- **Backend API Health Check**: [http://localhost/health](http://localhost/health)
+
+### 3. Development Mode (Hot-Reloading)
+To run the containers with hot-reloading for code changes (Vite HMR and FastAPI Uvicorn reload):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+---
+
 ## Poster Images
 
 Posters are fetched in priority order:
