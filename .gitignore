@@ -32,6 +32,7 @@ android/build/
 android/app/build/
 android/*.keystore
 android/local.properties
+*.apk
 
 # ── Environment ───────────────────────────────────────────────────────────────
 .env
