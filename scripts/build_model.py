@@ -4,34 +4,11 @@ scripts/build_model.py
 ======================
 CLI script that runs the full preprocessing pipeline and serialises
 ``movies.pkl`` and ``similarity.pkl`` into ``data/processed/``.
-
-Usage
------
-From the project root::
-
-    python scripts/build_model.py
-
-Options
--------
---raw-dir       Path to directory containing unzipped TMDB CSV files.
-                Default: data/raw
---output-dir    Path to write the generated pickle files.
-                Default: data/processed
---max-features  Maximum vocabulary size for CountVectorizer.
-                Default: 5000
-
-Notes
------
-* The script will **unzip** the dataset archives automatically if the CSV
-  files are not yet present in *raw-dir*.
-* On first run, NLTK's ``punkt`` tokeniser data is downloaded automatically.
 """
 
 from __future__ import annotations
 
 import argparse
-import os
-import pickle
 import sys
 import zipfile
 from pathlib import Path
@@ -42,6 +19,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import pickle
 
 from src.preprocessing import build_tags_dataframe
 
@@ -86,12 +64,25 @@ def _save_pickle(obj: object, path: Path) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def build(raw_dir: Path, output_dir: Path, max_features: int) -> None:
-    print("\n── Step 1/4  Unzip datasets ────────────────────────────────────")
-    _maybe_unzip(raw_dir)
+def build(
+    raw_dir: Path,
+    output_dir: Path,
+    max_features: int,
+    dataset: str,
+    archive_path: Path,
+    vote_threshold: int,
+) -> None:
+    print("\n── Step 1/4  Check datasets ────────────────────────────────────")
+    if dataset == "tmdb5000":
+        _maybe_unzip(raw_dir)
 
     print("\n── Step 2/4  Preprocess & build tags ──────────────────────────")
-    df = build_tags_dataframe(raw_dir)
+    df = build_tags_dataframe(
+        raw_dir=raw_dir,
+        dataset=dataset,
+        archive_path=archive_path,
+        vote_threshold=vote_threshold,
+    )
     print(f"[INFO]  Dataset shape: {df.shape}")
 
     print("\n── Step 3/4  Vectorise with CountVectorizer ───────────────────")
@@ -100,7 +91,7 @@ def build(raw_dir: Path, output_dir: Path, max_features: int) -> None:
     print(f"[INFO]  Vector shape: {vectors.shape}")
 
     print("\n── Step 4/4  Compute cosine similarity & save ─────────────────")
-    similarity = cosine_similarity(vectors)
+    similarity = cosine_similarity(vectors).astype("float32")
     print(f"[INFO]  Similarity matrix shape: {similarity.shape}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -110,7 +101,6 @@ def build(raw_dir: Path, output_dir: Path, max_features: int) -> None:
     print("\n✅  Model built successfully!")
     print(f"    movies.pkl      → {output_dir / 'movies.pkl'}")
     print(f"    similarity.pkl  → {output_dir / 'similarity.pkl'}")
-    print("\n    Run the app with:  streamlit run app.py\n")
 
 
 def main() -> None:
@@ -135,8 +125,34 @@ def main() -> None:
         default=5000,
         help="Maximum vocabulary size for CountVectorizer (default: 5000).",
     )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        choices=["tmdb5000", "kaggle"],
+        default="tmdb5000",
+        help="Dataset to build from: tmdb5000 or kaggle (default: tmdb5000).",
+    )
+    parser.add_argument(
+        "--archive-path",
+        type=Path,
+        default=PROJECT_ROOT / "more-datasets" / "archive.zip",
+        help="Path to Kaggle archive zip file.",
+    )
+    parser.add_argument(
+        "--vote-threshold",
+        type=int,
+        default=30,
+        help="Minimum vote count for Kaggle movies (default: 30).",
+    )
     args = parser.parse_args()
-    build(args.raw_dir, args.output_dir, args.max_features)
+    build(
+        raw_dir=args.raw_dir,
+        output_dir=args.output_dir,
+        max_features=args.max_features,
+        dataset=args.dataset,
+        archive_path=args.archive_path,
+        vote_threshold=args.vote_threshold,
+    )
 
 
 if __name__ == "__main__":

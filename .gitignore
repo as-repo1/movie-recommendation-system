@@ -51,3 +51,7 @@ data/*.sqlite3
 *.db
 *.sqlite3
 
+# ── Datasets & Temporary Files ───────────────────────────────────────────────
+more-datasets/
+scratch/
+
