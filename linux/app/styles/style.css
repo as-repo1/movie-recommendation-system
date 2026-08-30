@@ -152,3 +152,10 @@ window.main-window {
     border: none;
     background: transparent;
 }
+
+/* ── Chat Dialog Modal ─────────────────────────────────────────────────── */
+window.chat-dialog-window {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+

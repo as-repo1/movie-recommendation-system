@@ -23,8 +23,9 @@ class MovieChatDialog(Adw.Window):
         self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
-        self.set_default_size(680, 580)
+        self.set_default_size(700, 600)
         self.set_title(f"Chat AI — {movie_data.get('title', 'Movie')}")
+        self.add_css_class("chat-dialog-window")
 
         self.movie_data = movie_data
         self.engine = MovieChatEngine(movie_data)
@@ -49,8 +50,10 @@ class MovieChatDialog(Adw.Window):
 
         # Main Container
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        content_box.set_margin_start(16)
-        content_box.set_margin_end(16)
+        content_box.set_vexpand(True)
+        content_box.set_hexpand(True)
+        content_box.set_margin_start(18)
+        content_box.set_margin_end(18)
         content_box.set_margin_top(12)
         content_box.set_margin_bottom(16)
 
@@ -75,8 +78,11 @@ class MovieChatDialog(Adw.Window):
 
         quick_scrolled = Gtk.ScrolledWindow()
         quick_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        quick_scrolled.set_min_content_height(44)
+        quick_scrolled.set_propagate_natural_height(True)
         quick_scrolled.set_child(quick_box)
         content_box.append(quick_scrolled)
+
 
         # Chat Messages Scrolled Window
         self.chat_scrolled = Gtk.ScrolledWindow()
