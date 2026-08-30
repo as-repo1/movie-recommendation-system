@@ -12,8 +12,10 @@ from typing import Any, Callable
 import gi
 
 gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, Gdk, Gtk
+
 from linux.app.db import local_db
 from linux.app.engine import engine
 from linux.app.image_loader import image_loader
@@ -173,7 +175,21 @@ class DetailView(Gtk.ScrolledWindow):
         self.watched_btn.connect("clicked", self._toggle_watched)
         actions_row.append(self.watched_btn)
 
-        # 4. Save / Export Poster Button
+        # 4. Chat AI / Ask Questions Button
+        chat_btn = Gtk.Button(label="💬 Ask AI")
+        chat_btn.add_css_class("pill")
+        chat_btn.set_tooltip_text(f"Ask questions & explore trivia about {m['title']}")
+        chat_btn.connect("clicked", lambda _: self._open_chat_dialog())
+        actions_row.append(chat_btn)
+
+        # 5. Share Movie Button
+        self.share_btn = Gtk.Button(label="📋 Share")
+        self.share_btn.add_css_class("pill")
+        self.share_btn.set_tooltip_text("Copy formatted movie markdown & link to clipboard")
+        self.share_btn.connect("clicked", lambda _: self._share_movie())
+        actions_row.append(self.share_btn)
+
+        # 6. Save / Export Poster Button
         if m.get("poster_path"):
             save_poster_btn = Gtk.Button(label="💾 Save Poster")
             save_poster_btn.add_css_class("pill")
@@ -184,6 +200,7 @@ class DetailView(Gtk.ScrolledWindow):
         header_info.append(actions_row)
         hero_box.append(header_info)
         self.main_box.append(hero_box)
+
 
         # ── External Databases & Reference Links ─────────────────────────────
         links_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -383,4 +400,28 @@ class DetailView(Gtk.ScrolledWindow):
             logger.info("Saved poster to %s", dest)
         except Exception as e:
             logger.error("Failed to save poster: %s", e)
+
+    def _open_chat_dialog(self) -> None:
+        """Open the interactive AI Movie Companion Q&A dialog."""
+        from linux.app.views.chat_dialog import MovieChatDialog
+        dialog = MovieChatDialog(parent_window=self.get_root(), movie_data=self.movie_data)
+        dialog.present()
+
+    def _share_movie(self) -> None:
+        """Copy formatted Markdown and links to system clipboard."""
+        m = self.movie_data
+        imdb_url = f"https://www.imdb.com/title/{m.get('imdb_id', '')}/" if m.get("imdb_id") else f"https://www.themoviedb.org/movie/{self.movie_id}"
+        md = f"🎬 **{m['title']}** ({m.get('year', '')}) | Rating: ★ {m.get('vote_average', 0.0):.1f}/10\n" \
+             f"Directed by {m.get('director', 'Unknown')} · {', '.join(m.get('genres', []))}\n" \
+             f"Overview: {m.get('overview', '')}\n" \
+             f"Link: {imdb_url}\n" \
+             f"— Recommended via RecLens AI"
+
+        display = Gdk.Display.get_default()
+        if display:
+            clipboard = display.get_clipboard()
+            clipboard.set(md)
+            self.share_btn.set_label("✓ Copied Link!")
+            self.share_btn.add_css_class("accent")
+
 

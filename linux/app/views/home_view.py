@@ -50,10 +50,25 @@ class HomeView(Gtk.ScrolledWindow):
 
         # ── 2. Mood Quick-Picker ─────────────────────────────────────────────
         mood_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+
+        mood_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         mood_title = Gtk.Label(label="✨ Discover by Vibe & Mood")
         mood_title.set_halign(Gtk.Align.START)
         mood_title.add_css_class("title-3")
-        mood_section.append(mood_title)
+        mood_hdr.append(mood_title)
+
+        marathon_btn = Gtk.Button(label="🍿 AI Marathon Builder")
+        marathon_btn.add_css_class("pill")
+        marathon_btn.add_css_class("flat")
+        marathon_btn.add_css_class("rating-badge")
+        marathon_btn.set_halign(Gtk.Align.END)
+        marathon_btn.set_hexpand(True)
+        marathon_btn.set_tooltip_text("Generate a curated 5-movie themed marathon")
+        marathon_btn.connect("clicked", lambda _: self._open_marathon_dialog())
+        mood_hdr.append(marathon_btn)
+
+        mood_section.append(mood_hdr)
+
 
         moods_flow = Gtk.FlowBox()
         moods_flow.set_valign(Gtk.Align.START)
@@ -180,3 +195,10 @@ class HomeView(Gtk.ScrolledWindow):
         scrolled.set_child(row_box)
         section.append(scrolled)
         self.main_box.append(section)
+
+    def _open_marathon_dialog(self) -> None:
+        """Open the AI Movie Marathon Generator modal dialog."""
+        from linux.app.views.marathon_dialog import MarathonDialog
+        dialog = MarathonDialog(parent_window=self.get_root(), on_movie_selected=self.on_movie_selected)
+        dialog.present()
+

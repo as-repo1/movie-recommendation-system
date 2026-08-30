@@ -152,12 +152,58 @@ class LinuxEngine:
 
         df = self.movies_df
 
-        # Text Query filter (Title, Director, or Cast)
+        # Advanced Search Syntax Parser
         if query and query.strip():
-            q = query.strip().lower()
-            mask_title = df["title"].str.lower().str.contains(q, na=False)
-            mask_dir = df["director"].str.lower().str.contains(q, na=False) if "director" in df.columns else False
-            df = df[mask_title | mask_dir]
+            raw_q = query.strip()
+            tokens = raw_q.split()
+            remaining_terms = []
+
+            for token in tokens:
+                if token.lower().startswith("actor:") or token.lower().startswith("cast:"):
+                    act_val = token.split(":", 1)[1].lower()
+                    if "cast" in df.columns:
+                        df = df[df["cast"].apply(lambda c: any(act_val in str(a).lower() for a in c) if isinstance(c, (list, tuple, np.ndarray)) else act_val in str(c).lower())]
+                elif token.lower().startswith("dir:") or token.lower().startswith("director:"):
+                    dir_val = token.split(":", 1)[1].lower()
+                    if "director" in df.columns:
+                        df = df[df["director"].str.lower().str.contains(dir_val, na=False)]
+                elif token.lower().startswith("genre:"):
+                    g_val = token.split(":", 1)[1].lower()
+                    df = df[df["genres"].apply(lambda gs: any(g_val in str(g).lower() for g in gs) if isinstance(gs, (list, tuple, np.ndarray)) else g_val in str(gs).lower())]
+                elif token.lower().startswith("year:"):
+                    try:
+                        y_val = int(token.split(":", 1)[1])
+                        df = df[df["year"] == y_val]
+                    except ValueError:
+                        pass
+                elif token.startswith(">20") or token.startswith(">19"):
+                    try:
+                        y_val = int(token[1:])
+                        df = df[df["year"] >= y_val]
+                    except ValueError:
+                        pass
+                elif token.startswith("<20") or token.startswith("<19"):
+                    try:
+                        y_val = int(token[1:])
+                        df = df[df["year"] <= y_val]
+                    except ValueError:
+                        pass
+                elif token.lower().startswith("rating:>"):
+                    try:
+                        r_val = float(token.split(":>", 1)[1])
+                        df = df[df["vote_average"] >= r_val]
+                    except ValueError:
+                        pass
+                else:
+                    remaining_terms.append(token)
+
+            if remaining_terms:
+                sub_q = " ".join(remaining_terms).lower()
+                mask_title = df["title"].str.lower().str.contains(sub_q, na=False)
+                mask_dir = df["director"].str.lower().str.contains(sub_q, na=False) if "director" in df.columns else False
+                mask_overview = df["overview"].str.lower().str.contains(sub_q, na=False) if "overview" in df.columns else False
+                df = df[mask_title | mask_dir | mask_overview]
+
 
         # Genre filter
         if genre and genre != "All":
