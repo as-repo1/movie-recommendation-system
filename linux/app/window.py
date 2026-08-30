@@ -8,17 +8,20 @@ from typing import Any
 import gi
 
 gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk
-from linux.app.engine import engine
+from gi.repository import Adw, Gdk, Gtk
 from linux.app.state import AppState
+from linux.app.theme_manager import theme_manager
 from linux.app.views.detail_view import DetailView
 from linux.app.views.home_view import HomeView
 from linux.app.views.mood_view import MoodView
 from linux.app.views.player_view import TrailerPlayerDialog
 from linux.app.views.search_view import SearchView
 from linux.app.views.watchlist_view import WatchlistView
+from linux.app.widgets.shortcuts_dialog import ShortcutsDialog
 from linux.app.widgets.spotlight_search import SpotlightSearchDialog
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,16 @@ class RecLensWindow(Adw.ApplicationWindow):
         if self.app_state.window_maximized:
             self.maximize()
 
+        # Apply saved theme palette
+        theme_manager.apply_theme(self.app_state.theme)
+
         self._nav_history: list[str] = []
         self._current_movie_id: int | None = None
 
         self._build_ui()
         self._setup_shortcuts()
         self.connect("close-request", self._on_close)
+
 
     def _build_ui(self) -> None:
         # ── Root Navigation SplitView ────────────────────────────────────────
@@ -60,7 +67,7 @@ class RecLensWindow(Adw.ApplicationWindow):
         self.title_widget = Adw.WindowTitle(title="RecLens", subtitle="AI Movie Discovery")
         self.header_bar.set_title_widget(self.title_widget)
 
-        # Spotlight Search Button (Ctrl+K)
+        # 1. Spotlight Search Button (Ctrl+K)
         search_btn = Gtk.Button()
         search_btn.add_css_class("flat")
         search_btn.set_tooltip_text("Instant Spotlight Search (Ctrl+K)")
@@ -68,6 +75,31 @@ class RecLensWindow(Adw.ApplicationWindow):
         search_btn.set_child(search_icon)
         search_btn.connect("clicked", lambda _: self.open_spotlight_search())
         self.header_bar.pack_end(search_btn)
+
+        # 2. Theme Selector DropDown
+        all_themes = theme_manager.get_all_themes()
+        theme_names = [t.name for t in all_themes]
+        theme_list = Gtk.StringList.new(theme_names)
+        self.theme_drop = Gtk.DropDown.new(theme_list, None)
+        self.theme_drop.set_tooltip_text("Switch Color Theme")
+        cur_idx = 0
+        for i, t in enumerate(all_themes):
+            if t.id == self.app_state.theme:
+                cur_idx = i
+                break
+        self.theme_drop.set_selected(cur_idx)
+        self.theme_drop.connect("notify::selected", self._on_theme_changed)
+        self.header_bar.pack_end(self.theme_drop)
+
+        # 3. Keyboard Shortcuts Button (?)
+        help_btn = Gtk.Button()
+        help_btn.add_css_class("flat")
+        help_btn.set_tooltip_text("Keyboard Shortcuts (?)")
+        help_icon = Gtk.Image.new_from_icon_name("help-about-symbolic")
+        help_btn.set_child(help_icon)
+        help_btn.connect("clicked", lambda _: self.open_shortcuts_dialog())
+        self.header_bar.pack_end(help_btn)
+
 
         # View Stack for Pages
         self.view_stack = Adw.ViewStack()
@@ -200,8 +232,23 @@ class RecLensWindow(Adw.ApplicationWindow):
 
     def _on_global_key_pressed(self, controller, keyval, keycode, state) -> bool:
         ctrl = state & Gdk.ModifierType.CONTROL_MASK
-        if ctrl and (keyval == Gdk.KEY_k or keyval == Gdk.KEY_K or keyval == Gdk.KEY_f or keyval == Gdk.KEY_F):
+        if ctrl and (keyval in (Gdk.KEY_k, Gdk.KEY_K, Gdk.KEY_f, Gdk.KEY_F)):
             self.open_spotlight_search()
+            return True
+        elif keyval in (Gdk.KEY_question, Gdk.KEY_F1):
+            self.open_shortcuts_dialog()
+            return True
+        elif keyval == Gdk.KEY_1:
+            self.switch_view("home")
+            return True
+        elif keyval == Gdk.KEY_2:
+            self.switch_view("search")
+            return True
+        elif keyval == Gdk.KEY_3:
+            self.switch_view("mood")
+            return True
+        elif keyval == Gdk.KEY_4:
+            self.switch_view("watchlist")
             return True
         elif keyval == Gdk.KEY_Escape:
             if self.view_stack.get_visible_child_name() == "detail":
@@ -209,7 +256,22 @@ class RecLensWindow(Adw.ApplicationWindow):
                 return True
         return False
 
+    def _on_theme_changed(self, dropdown, param) -> None:
+        idx = dropdown.get_selected()
+        all_themes = theme_manager.get_all_themes()
+        if 0 <= idx < len(all_themes):
+            selected_theme = all_themes[idx]
+            self.app_state.theme = selected_theme.id
+            theme_manager.apply_theme(selected_theme.id)
+            self.app_state.save()
+
+    def open_shortcuts_dialog(self) -> None:
+        """Open the Keyboard Shortcuts Cheat-Sheet modal dialog."""
+        dialog = ShortcutsDialog(parent_window=self)
+        dialog.present()
+
     def _on_sidebar_row_activated(self, list_box: Gtk.ListBox, row: Gtk.ListBoxRow) -> None:
+
         if hasattr(row, "view_name"):
             self.switch_view(row.view_name)
 

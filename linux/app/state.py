@@ -21,6 +21,7 @@ class AppState:
     window_maximized: bool = False
     active_view: str = "home"
     dark_mode: bool = True
+    theme: str = "catppuccin"
     volume: float = 0.8
     last_query: str = ""
 
@@ -38,12 +39,14 @@ class AppState:
                 window_maximized=bool(data.get("window_maximized", False)),
                 active_view=str(data.get("active_view", "home")),
                 dark_mode=bool(data.get("dark_mode", True)),
+                theme=str(data.get("theme", "catppuccin")),
                 volume=float(data.get("volume", 0.8)),
                 last_query=str(data.get("last_query", "")),
             )
         except Exception as e:
             logger.warning("Failed to load application state from %s: %s", STATE_FILE, e)
             return cls()
+
 
     def save(self) -> None:
         """Persist state to disk safely."""

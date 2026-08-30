@@ -2,19 +2,27 @@
 
 from __future__ import annotations
 
+import logging
+import shutil
+import urllib.parse
+import webbrowser
+from pathlib import Path
 from typing import Any, Callable
 
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk
+from gi.repository import Adw, Gtk
 from linux.app.db import local_db
 from linux.app.engine import engine
 from linux.app.image_loader import image_loader
 from linux.app.widgets.mood_badge import MoodBadge
 from linux.app.widgets.movie_card import MovieCard
 from linux.app.widgets.rating_stars import RatingStars
+
+logger = logging.getLogger(__name__)
+
 
 
 class DetailView(Gtk.ScrolledWindow):
@@ -165,9 +173,63 @@ class DetailView(Gtk.ScrolledWindow):
         self.watched_btn.connect("clicked", self._toggle_watched)
         actions_row.append(self.watched_btn)
 
+        # 4. Save / Export Poster Button
+        if m.get("poster_path"):
+            save_poster_btn = Gtk.Button(label="💾 Save Poster")
+            save_poster_btn.add_css_class("pill")
+            save_poster_btn.set_tooltip_text("Save high-res poster to ~/Pictures/")
+            save_poster_btn.connect("clicked", lambda _: self._save_poster())
+            actions_row.append(save_poster_btn)
+
         header_info.append(actions_row)
         hero_box.append(header_info)
         self.main_box.append(hero_box)
+
+        # ── External Databases & Reference Links ─────────────────────────────
+        links_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        links_lbl = Gtk.Label(label="🌐 External Databases:")
+        links_lbl.add_css_class("stat-box-title")
+        links_lbl.set_valign(Gtk.Align.CENTER)
+        links_box.append(links_lbl)
+
+        # IMDb Link
+        imdb_id = m.get("imdb_id")
+        imdb_url = f"https://www.imdb.com/title/{imdb_id}/" if imdb_id else f"https://www.imdb.com/find?q={urllib.parse.quote_plus(m['title'])}"
+        imdb_btn = Gtk.Button(label="IMDb ↗")
+        imdb_btn.add_css_class("flat")
+        imdb_btn.add_css_class("rating-badge")
+        imdb_btn.set_tooltip_text(f"Open {m['title']} on IMDb")
+        imdb_btn.connect("clicked", lambda _: webbrowser.open(imdb_url))
+        links_box.append(imdb_btn)
+
+        # TMDB Link
+        tmdb_url = f"https://www.themoviedb.org/movie/{self.movie_id}"
+        tmdb_btn = Gtk.Button(label="TMDB ↗")
+        tmdb_btn.add_css_class("flat")
+        tmdb_btn.add_css_class("rating-badge")
+        tmdb_btn.set_tooltip_text(f"Open {m['title']} on TMDB")
+        tmdb_btn.connect("clicked", lambda _: webbrowser.open(tmdb_url))
+        links_box.append(tmdb_btn)
+
+        # Wikipedia Link
+        wiki_url = f"https://en.wikipedia.org/wiki/Special:Search?search={urllib.parse.quote_plus(m['title'] + ' film')}"
+        wiki_btn = Gtk.Button(label="Wikipedia ↗")
+        wiki_btn.add_css_class("flat")
+        wiki_btn.add_css_class("rating-badge")
+        wiki_btn.set_tooltip_text(f"Search plot trivia on Wikipedia")
+        wiki_btn.connect("clicked", lambda _: webbrowser.open(wiki_url))
+        links_box.append(wiki_btn)
+
+        # Letterboxd Link
+        letter_url = f"https://letterboxd.com/search/{urllib.parse.quote_plus(m['title'])}/"
+        letter_btn = Gtk.Button(label="Letterboxd ↗")
+        letter_btn.add_css_class("flat")
+        letter_btn.add_css_class("rating-badge")
+        letter_btn.set_tooltip_text(f"Explore reviews on Letterboxd")
+        letter_btn.connect("clicked", lambda _: webbrowser.open(letter_url))
+        links_box.append(letter_btn)
+
+        self.main_box.append(links_box)
 
         # ── Statistics & Financial ROI Bar ───────────────────────────────────
         stats_grid = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
@@ -198,6 +260,7 @@ class DetailView(Gtk.ScrolledWindow):
             cast_title.set_halign(Gtk.Align.START)
             cast_title.add_css_class("title-4")
             cast_section.append(cast_title)
+
 
             cast_flow = Gtk.FlowBox()
             cast_flow.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -297,3 +360,27 @@ class DetailView(Gtk.ScrolledWindow):
             self.watched_btn.set_label("★ Watched")
             self.wl_btn.set_label("+ Add to Watchlist")
             self.wl_btn.remove_css_class("accent")
+
+    def _save_poster(self) -> None:
+        """Export poster image to ~/Pictures/ or user directory."""
+        m = self.movie_data
+        poster_path = m.get("poster_path")
+        if not poster_path:
+            return
+
+        # Find cached poster file
+        cached_file = image_loader.get_cached_path(poster_path)
+        if not cached_file or not cached_file.exists():
+            return
+
+        pics_dir = Path.home() / "Pictures"
+        pics_dir.mkdir(parents=True, exist_ok=True)
+        sanitized_title = "".join(c for c in m["title"] if c.isalnum() or c in (" ", "_", "-")).strip()
+        dest = pics_dir / f"{sanitized_title}_poster.jpg"
+
+        try:
+            shutil.copyfile(cached_file, dest)
+            logger.info("Saved poster to %s", dest)
+        except Exception as e:
+            logger.error("Failed to save poster: %s", e)
+

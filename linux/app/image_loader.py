@@ -97,6 +97,20 @@ class ImageLoader:
 
         self.executor.submit(_worker)
 
+    def get_cached_path(self, url_or_path: str, is_backdrop: bool = False) -> Path | None:
+        """Return the on-disk cached Path if the image is downloaded."""
+        if not url_or_path or url_or_path == "nan":
+            return None
+        if url_or_path.startswith("http://") or url_or_path.startswith("https://"):
+            full_url = url_or_path
+        else:
+            base = TMDB_BACKDROP_BASE if is_backdrop else TMDB_IMAGE_BASE
+            full_url = f"{base}/{url_or_path.lstrip('/')}"
+        cache_key = hashlib.sha256(full_url.encode("utf-8")).hexdigest() + ".jpg"
+        disk_path = self.cache_dir / cache_key
+        return disk_path if disk_path.exists() else None
+
+
     def _prune_cache_if_needed(self) -> None:
         """Prune oldest files if cache exceeds MAX_CACHE_BYTES."""
         try:

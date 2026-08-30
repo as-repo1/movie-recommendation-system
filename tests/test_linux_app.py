@@ -144,3 +144,29 @@ def test_linux_image_loader_caching(tmp_path: Path):
     loader = ImageLoader(cache_dir=cache_dir)
     assert cache_dir.exists()
     assert loader.cache_dir == cache_dir
+
+
+def test_linux_theme_manager():
+    """Test ThemeManager palettes and dynamic theme selection."""
+    from linux.app.theme_manager import THEMES, theme_manager
+
+    assert len(THEMES) >= 6
+    assert "catppuccin" in THEMES
+    assert "nord" in THEMES
+    assert "dracula" in THEMES
+    assert "oled" in THEMES
+    assert "sunset" in THEMES
+    assert "adwaita_light" in THEMES
+
+    # Check theme properties
+    cat = theme_manager.get_theme("catppuccin")
+    assert cat.is_dark is True
+    assert cat.accent_color == "#89b4fa"
+
+    nord = theme_manager.get_theme("nord")
+    assert nord.is_dark is True
+    assert nord.accent_color == "#88c0d0"
+
+    all_th = theme_manager.get_all_themes()
+    assert len(all_th) >= 6
+

@@ -97,7 +97,23 @@ class SearchView(Gtk.ScrolledWindow):
         self.sort_drop.connect("notify::selected", self._on_filter_changed)
         filter_box.append(self.sort_drop)
 
+        # 5. Rating Slider Box
+        rating_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        rating_box.set_valign(Gtk.Align.CENTER)
+        self.rating_lbl = Gtk.Label(label="Min: ★ 0.0+")
+        self.rating_lbl.add_css_class("stat-box-title")
+        rating_box.append(self.rating_lbl)
+
+        self.rating_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0, 9.0, 0.5)
+        self.rating_scale.set_size_request(120, -1)
+        self.rating_scale.set_draw_value(False)
+        self.rating_scale.set_value(0.0)
+        self.rating_scale.connect("value-changed", self._on_rating_changed)
+        rating_box.append(self.rating_scale)
+        filter_box.append(rating_box)
+
         self.main_box.append(filter_box)
+
 
         # ── Movie Grid FlowBox ───────────────────────────────────────────────
         self.grid = Gtk.FlowBox()
@@ -117,8 +133,16 @@ class SearchView(Gtk.ScrolledWindow):
     def _on_filter_changed(self, dropdown, param) -> None:
         self._execute_search()
 
+    def _on_rating_changed(self, scale: Gtk.Scale) -> None:
+        val = scale.get_value()
+        self.rating_lbl.set_text(f"Min: ★ {val:.1f}+")
+        if self._debounce_timer:
+            GLib.source_remove(self._debounce_timer)
+        self._debounce_timer = GLib.timeout_add(100, self._execute_search)
+
     def _execute_search(self) -> bool:
         query = self.search_entry.get_text().strip()
+        min_rating = self.rating_scale.get_value()
 
         # Genre
         selected_genre_idx = self.genre_drop.get_selected()
@@ -159,9 +183,11 @@ class SearchView(Gtk.ScrolledWindow):
             "genre": genre,
             "decade": decade,
             "runtime_category": runtime_cat,
+            "min_rating": min_rating,
             "sort_by": sort_by,
             "limit": 48,
         }
+
 
         engine.search_async(query_params, callback=self._render_results)
         return False
