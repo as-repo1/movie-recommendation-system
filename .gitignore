@@ -17,8 +17,11 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+built-things/
+*.spec
 .eggs/
 .venv/
+
 venv/
 .pytest_cache/
 *.log

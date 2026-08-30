@@ -11,7 +11,9 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gtk
+from linux.app.engine import engine
 from linux.app.state import AppState
+
 from linux.app.theme_manager import theme_manager
 from linux.app.views.detail_view import DetailView
 from linux.app.views.home_view import HomeView

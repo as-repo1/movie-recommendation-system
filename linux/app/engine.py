@@ -13,9 +13,14 @@ import pandas as pd
 from gi.repository import GLib
 
 # Ensure root workspace is on python path for importing src.recommender
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    PROJECT_ROOT = Path(sys._MEIPASS)
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
 
 from src.recommender import TopKSimilarityIndex, load_model, recommend, recommend_by_mood
 
