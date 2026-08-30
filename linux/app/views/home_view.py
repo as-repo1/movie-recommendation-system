@@ -165,6 +165,9 @@ class HomeView(Gtk.ScrolledWindow):
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         scrolled.set_hexpand(True)
+        scrolled.set_min_content_height(310)
+        scrolled.set_propagate_natural_height(True)
+
 
         row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
         row_box.set_margin_top(4)

@@ -223,6 +223,9 @@ class DetailView(Gtk.ScrolledWindow):
         sim_scrolled = Gtk.ScrolledWindow()
         sim_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         sim_scrolled.set_hexpand(True)
+        sim_scrolled.set_min_content_height(310)
+        sim_scrolled.set_propagate_natural_height(True)
+
 
         sim_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
         sim_row.set_margin_top(4)

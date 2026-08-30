@@ -8,26 +8,26 @@ window.main-window {
 
 /* ── Hero Banner ────────────────────────────────────────────────────────── */
 .hero-card {
-    border-radius: 18px;
-    background: linear-gradient(135deg, rgba(30, 30, 46, 0.95), rgba(17, 17, 27, 0.95));
-    border: 1px solid alpha(@accent_color, 0.25);
+    border-radius: 16px;
+    background: linear-gradient(135deg, alpha(@accent_color, 0.12), alpha(@card_bg_color, 0.95));
+    border: 1px solid alpha(@accent_color, 0.3);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
     padding: 24px;
-    margin: 12px;
+    margin: 4px 0 16px 0;
 }
 
 .hero-title {
     font-size: 26px;
     font-weight: 800;
     color: @accent_color;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .hero-tagline {
     font-size: 14px;
     font-style: italic;
     color: alpha(@window_fg_color, 0.75);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .hero-overview {
@@ -39,23 +39,22 @@ window.main-window {
 /* ── Movie Poster Cards ─────────────────────────────────────────────────── */
 .movie-card {
     border-radius: 12px;
-    background-color: @card_bg_color;
+    background-color: alpha(@card_bg_color, 0.8);
     border: 1px solid alpha(@window_fg_color, 0.08);
     transition: all 200ms cubic-bezier(0.25, 1, 0.5, 1);
     padding: 6px;
 }
 
 .movie-card:hover {
-    background-color: alpha(@accent_color, 0.12);
-    border-color: alpha(@accent_color, 0.45);
+    background-color: alpha(@accent_color, 0.15);
+    border-color: alpha(@accent_color, 0.5);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .movie-poster-frame {
     border-radius: 8px;
-    background-color: #11111b;
+    background-color: alpha(@window_fg_color, 0.05);
 }
-
 
 .movie-card-title {
     font-weight: 700;
@@ -70,9 +69,9 @@ window.main-window {
 
 /* ── Badges & Chips ─────────────────────────────────────────────────────── */
 .match-badge-high {
-    background-color: rgba(166, 227, 161, 0.2);
+    background-color: rgba(166, 227, 161, 0.25);
     color: #a6e3a1;
-    border: 1px solid rgba(166, 227, 161, 0.4);
+    border: 1px solid rgba(166, 227, 161, 0.5);
     border-radius: 6px;
     padding: 2px 6px;
     font-size: 11px;
@@ -80,9 +79,9 @@ window.main-window {
 }
 
 .match-badge-med {
-    background-color: rgba(249, 226, 175, 0.2);
+    background-color: rgba(249, 226, 175, 0.25);
     color: #f9e2af;
-    border: 1px solid rgba(249, 226, 175, 0.4);
+    border: 1px solid rgba(249, 226, 175, 0.5);
     border-radius: 6px;
     padding: 2px 6px;
     font-size: 11px;
@@ -90,12 +89,12 @@ window.main-window {
 }
 
 .rating-badge {
-    background-color: rgba(250, 179, 135, 0.2);
+    background-color: rgba(250, 179, 135, 0.25);
     color: #fab387;
-    border: 1px solid rgba(250, 179, 135, 0.35);
+    border: 1px solid rgba(250, 179, 135, 0.45);
     border-radius: 6px;
-    padding: 2px 6px;
-    font-size: 11px;
+    padding: 2px 8px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -104,7 +103,7 @@ window.main-window {
     color: @accent_color;
     border: 1px solid alpha(@accent_color, 0.3);
     border-radius: 12px;
-    padding: 4px 10px;
+    padding: 4px 12px;
     font-size: 12px;
     font-weight: 600;
 }
@@ -141,7 +140,7 @@ window.main-window {
 
 /* ── Spotlight Search Overlay ───────────────────────────────────────────── */
 .spotlight-window {
-    background-color: alpha(@window_bg_color, 0.95);
+    background-color: alpha(@window_bg_color, 0.96);
     border: 1px solid alpha(@accent_color, 0.35);
     border-radius: 16px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);

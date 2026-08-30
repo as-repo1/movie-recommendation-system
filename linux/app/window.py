@@ -50,15 +50,12 @@ class RecLensWindow(Adw.ApplicationWindow):
         self.split_view.set_max_sidebar_width(260)
 
         # ── Sidebar ──────────────────────────────────────────────────────────
-        sidebar_page = Adw.NavigationPage.new(self._create_sidebar(), "Navigation")
+        sidebar_toolbar = Adw.ToolbarView()
+        sidebar_toolbar.set_content(self._create_sidebar())
+        sidebar_page = Adw.NavigationPage.new(sidebar_toolbar, "Navigation")
         self.split_view.set_sidebar(sidebar_page)
 
         # ── Content View Stack & Header ──────────────────────────────────────
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        content_box.set_vexpand(True)
-        content_box.set_hexpand(True)
-
-        # HeaderBar
         self.header_bar = Adw.HeaderBar()
         self.title_widget = Adw.WindowTitle(title="RecLens", subtitle="AI Movie Discovery")
         self.header_bar.set_title_widget(self.title_widget)
@@ -72,13 +69,10 @@ class RecLensWindow(Adw.ApplicationWindow):
         search_btn.connect("clicked", lambda _: self.open_spotlight_search())
         self.header_bar.pack_end(search_btn)
 
-        content_box.append(self.header_bar)
-
         # View Stack for Pages
         self.view_stack = Adw.ViewStack()
         self.view_stack.set_vexpand(True)
         self.view_stack.set_hexpand(True)
-
 
         # 1. Home View
         self.home_view = HomeView(
@@ -110,19 +104,29 @@ class RecLensWindow(Adw.ApplicationWindow):
         initial_view = self.app_state.active_view if self.app_state.active_view in ["home", "search", "mood", "watchlist"] else "home"
         self.view_stack.set_visible_child_name(initial_view)
 
-        content_box.append(self.view_stack)
-        content_page = Adw.NavigationPage.new(content_box, "Content")
+        # Content ToolbarView
+        self.toolbar_view = Adw.ToolbarView()
+        self.toolbar_view.add_top_bar(self.header_bar)
+        self.toolbar_view.set_content(self.view_stack)
+
+        content_page = Adw.NavigationPage.new(self.toolbar_view, "Content")
         self.split_view.set_content(content_page)
 
         self.set_content(self.split_view)
 
     def _create_sidebar(self) -> Gtk.Widget:
+        sidebar_scrolled = Gtk.ScrolledWindow()
+        sidebar_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        sidebar_scrolled.set_vexpand(True)
+        sidebar_scrolled.set_hexpand(True)
+
         sidebar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         sidebar_box.set_margin_start(12)
         sidebar_box.set_margin_end(12)
         sidebar_box.set_margin_top(12)
         sidebar_box.set_margin_bottom(16)
         sidebar_box.add_css_class("navigation-sidebar")
+
 
         # App Brand Header
         brand_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -185,7 +189,9 @@ class RecLensWindow(Adw.ApplicationWindow):
         else:
             self.nav_list.select_row(self.sidebar_rows["home"])
 
-        return sidebar_box
+        sidebar_scrolled.set_child(sidebar_box)
+        return sidebar_scrolled
+
 
     def _setup_shortcuts(self) -> None:
         key_controller = Gtk.EventControllerKey()
