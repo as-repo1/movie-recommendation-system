@@ -1,6 +1,6 @@
 # RecLens — AI-Powered Movie Recommendation & Multi-Source Discovery Platform
 
-RecLens is an enterprise-grade movie recommendation and discovery platform. It combines an ultra-fast **FastAPI ML-serving backend**, a modern **React + Vite + TypeScript web application**, a standalone **Streamlit AI Explorer (`streamlit_app.py`)**, a native **Jetpack Compose Android app**, and a production **Docker Compose** stack.
+RecLens is an enterprise-grade movie recommendation and discovery platform. It combines a **Native Linux Desktop App (GTK4 + Libadwaita)**, an ultra-fast **FastAPI ML-serving backend**, a modern **React + Vite + TypeScript web application**, a standalone **Streamlit AI Explorer (`streamlit_app.py`)**, a native **Jetpack Compose Android app**, and a production **Docker Compose** stack.
 
 ---
 
@@ -13,6 +13,19 @@ RecLens is an enterprise-grade movie recommendation and discovery platform. It c
 | **Recommendation Latency** | $\approx 25\text{ms} - 45\text{ms}$ | **`5.71 ms`** (P95: `6.05 ms`) | **$5\times - 8\times$ faster** 🏎️ |
 | **Clean Catalog Storage** | Uncompressed CSV | **`12.48 MB` Snappy Parquet** | High-speed columnar query 📊 |
 | **Cleaned Movies Retained** | Unfiltered raw (1.23M) | **`63,948` valid movies** | Enterprise noise & dupes purged 🛡️ |
+
+---
+
+## 🐧 Native Linux Desktop Application (GTK4 + Libadwaita)
+
+RecLens features a dedicated native Linux desktop application built with **GTK4** and **Libadwaita** (`org.reclens.RecLens`):
+- **Direct In-Process Engine**: Zero network latency ($<5\text{ms}$) running directly in memory from `similarity.pkl` and `movies_clean.parquet`.
+- **GNOME HIG Adaptive Shell**: `Adw.NavigationSplitView` sidebar, `Adw.Carousel`, `Adw.HeaderBar`, and dark/light theme switching.
+- **Spotlight Search (`Ctrl+K` / `Ctrl+F`)**: Instant fuzzy search overlay across 15,000+ movies with live poster thumbnails and keyboard navigation.
+- **Embedded Trailer Player**: In-app WebKitGTK modal dialog streaming official YouTube trailers.
+- **Local SQLite Library**: Watchlist, Watched history, and personal star ratings saved at `~/.local/share/reclens/db.sqlite` with **JSON / CSV / Markdown** export & import.
+- **CLI Commands**: Direct terminal utilities (`reclens search <query>`, `reclens recommend <title>`, `reclens watchlist`).
+- **FreeDesktop & AppStream Packaging**: AppImage builder, Debian `.deb`, Fedora `.rpm`, Arch `PKGBUILD`, and one-click `install.sh`.
 
 ---
 
@@ -44,23 +57,16 @@ RecLens serves recommendations using a multi-factor hybrid intelligence stack:
 
 ---
 
-## 🌐 Multi-Tier Movie Database & Context Engine
-
-- **Tier 1 — TMDB API v3**: Live search, trending, YouTube trailer video embeds, high-res posters, backdrops, and full cast/crew.
-- **Tier 2 — OMDb API**: Multi-source score aggregator providing Rotten Tomatoes Tomatometer, Metacritic, IMDb rating & votes, Box Office, and Awards.
-- **Tier 3 — Wikipedia Context**: Direct IMDb and Wikipedia search links for plot trivia and production history.
-- **Tier 4 — Enriched Local Database**: Complete local dataset (`movies_clean.parquet` & `movies.pkl`) with directors, cast, budget, revenue, moods, and keywords, enabling 100% offline functionality.
-- **Ingestion & Sync Pipelines**:
-  - `scripts/ingest_tmdb_daily.py`: Full ingestion pipeline for the 1.23M+ TMDB dataset.
-  - `scripts/build_model.py`: Fast model builder with Top-K sparse index serialization.
-  - `scripts/sync_tmdb.py`: One-command sync tool to fetch and index new releases from TMDB.
-
----
-
 ## 📁 Project Structure
 
 ```
 movie-recommendation-system/
+├── linux/                  # Native Linux Desktop App (GTK4 + Libadwaita)
+│   ├── app/                # Application shell, Window, Engine, Database, Views & Widgets
+│   ├── data/               # App Icons (SVG/PNG), .desktop entry & AppStream metainfo XML
+│   ├── packaging/          # AppImage, Debian .deb, Fedora .spec & Arch PKGBUILD
+│   ├── install.sh          # One-click desktop installer
+│   └── run.sh              # Desktop launcher script
 ├── backend/                # FastAPI ML Serving API (RecLens API)
 │   ├── app/
 │   │   ├── core/           # Configuration, Database engine, Schema migrations
@@ -78,7 +84,7 @@ movie-recommendation-system/
 │   │   └── services/api.ts # API client with dynamic auth/session injection
 │   └── Dockerfile
 ├── streamlit_app.py        # Standalone Streamlit CineMatch interface
-├── tests/                  # Automated pytest test suite (API, Recommender, Preprocessing - 25 tests)
+├── tests/                  # Automated pytest test suite (API, Linux App, Recommender, Preprocessing - 29 tests)
 ├── src/
 │   ├── preprocessing.py    # Enterprise data cleaning, sanitization & feature enrichment
 │   ├── recommender.py      # Top-K sparse recommender, Bayesian priors, MMR & explainability
@@ -104,7 +110,7 @@ movie-recommendation-system/
 # Setup virtualenv and install dependencies
 uv venv --python 3.11 .venv
 source .venv/bin/activate
-uv pip install -r requirements.txt -r backend/requirements.txt
+uv pip install -r requirements.txt -r backend/requirements.txt PyGObject
 
 # Option A: Ingest full 1.23M TMDB dataset into portable Top-K format
 python scripts/ingest_tmdb_daily.py data/TMDB_all_movies.csv --top-k 100 --min-votes 20 --top-n 15000
@@ -121,13 +127,27 @@ python scripts/train_lightfm.py --epochs 8
 python -m pytest -v
 ```
 
-### 3. Run FastAPI Backend
+### 3. Launch Native Linux Desktop App
+```bash
+# Run directly from source
+./linux/run.sh
+
+# Or install permanently into your GNOME/KDE desktop launcher
+./linux/install.sh
+
+# CLI utilities
+reclens search "Inception"
+reclens recommend "Interstellar"
+reclens watchlist
+```
+
+### 4. Run FastAPI Backend
 ```bash
 PYTHONPATH=backend:. uvicorn app.main:app --port 8001 --reload
 ```
 Interactive Swagger Documentation: [http://localhost:8001/docs](http://localhost:8001/docs)
 
-### 4. Run React Web Client
+### 5. Run React Web Client
 ```bash
 cd frontend
 npm install
@@ -135,7 +155,7 @@ npm run dev
 ```
 Open [http://localhost:5173/](http://localhost:5173/) in your browser.
 
-### 5. Run Streamlit Explorer
+### 6. Run Streamlit Explorer
 ```bash
 streamlit run streamlit_app.py --server.port 8501
 ```
@@ -152,4 +172,5 @@ docker compose up -d --build
 - **Web App**: [http://localhost/](http://localhost/)
 - **API Docs**: [http://localhost/docs](http://localhost/docs)
 - **Health Check**: [http://localhost/health](http://localhost/health)
+
 

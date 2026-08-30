@@ -1,0 +1,22 @@
+# Maintainer: RecLens Team <team@reclens.org>
+pkgname=reclens-git
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="AI-Powered Movie Discovery & Recommendation Platform (GTK4/Libadwaita)"
+arch=('any')
+url="https://github.com/as-repo1/movie-recommendation-system"
+license=('MIT')
+depends=('python' 'python-gobject' 'libadwaita' 'gtk4' 'python-pandas' 'python-numpy' 'python-httpx' 'python-pyarrow')
+makedepends=('git')
+provides=('reclens')
+conflicts=('reclens')
+source=("git+https://github.com/as-repo1/movie-recommendation-system.git")
+md5sums=('SKIP')
+
+package() {
+    cd "$srcdir/movie-recommendation-system"
+    install -Dm755 linux/run.sh "$pkgdir/usr/bin/reclens"
+    install -Dm644 linux/data/org.reclens.RecLens.desktop "$pkgdir/usr/share/applications/org.reclens.RecLens.desktop"
+    install -Dm644 linux/data/icons/org.reclens.RecLens.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.reclens.RecLens.svg"
+    install -Dm644 linux/data/org.reclens.RecLens.metainfo.xml "$pkgdir/usr/share/metainfo/org.reclens.RecLens.metainfo.xml"
+}

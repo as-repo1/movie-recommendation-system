@@ -1,0 +1,155 @@
+/* RecLens — Libadwaita & GTK4 Custom Styling */
+
+/* ── Global Accents & Typography ────────────────────────────────────────── */
+window.main-window {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+
+/* ── Hero Banner ────────────────────────────────────────────────────────── */
+.hero-card {
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(30, 30, 46, 0.95), rgba(17, 17, 27, 0.95));
+    border: 1px solid alpha(@accent_color, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    margin: 12px;
+}
+
+.hero-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: @accent_color;
+    margin-bottom: 6px;
+}
+
+.hero-tagline {
+    font-size: 14px;
+    font-style: italic;
+    color: alpha(@window_fg_color, 0.75);
+    margin-bottom: 12px;
+}
+
+.hero-overview {
+    font-size: 13px;
+    line-height: 1.5;
+    color: alpha(@window_fg_color, 0.85);
+}
+
+/* ── Movie Poster Cards ─────────────────────────────────────────────────── */
+.movie-card {
+    border-radius: 12px;
+    background-color: @card_bg_color;
+    border: 1px solid alpha(@window_fg_color, 0.08);
+    transition: all 200ms cubic-bezier(0.25, 1, 0.5, 1);
+    padding: 6px;
+}
+
+.movie-card:hover {
+    background-color: alpha(@accent_color, 0.12);
+    border-color: alpha(@accent_color, 0.45);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.movie-poster-frame {
+    border-radius: 8px;
+    background-color: #11111b;
+}
+
+
+.movie-card-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.movie-card-subtitle {
+    font-size: 11px;
+    color: alpha(@window_fg_color, 0.65);
+}
+
+/* ── Badges & Chips ─────────────────────────────────────────────────────── */
+.match-badge-high {
+    background-color: rgba(166, 227, 161, 0.2);
+    color: #a6e3a1;
+    border: 1px solid rgba(166, 227, 161, 0.4);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.match-badge-med {
+    background-color: rgba(249, 226, 175, 0.2);
+    color: #f9e2af;
+    border: 1px solid rgba(249, 226, 175, 0.4);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.rating-badge {
+    background-color: rgba(250, 179, 135, 0.2);
+    color: #fab387;
+    border: 1px solid rgba(250, 179, 135, 0.35);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.mood-badge {
+    background-color: alpha(@accent_color, 0.15);
+    color: @accent_color;
+    border: 1px solid alpha(@accent_color, 0.3);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mood-badge:hover {
+    background-color: alpha(@accent_color, 0.3);
+}
+
+/* ── Detail Page Styling ────────────────────────────────────────────────── */
+.detail-backdrop {
+    border-radius: 16px;
+    background: linear-gradient(180deg, transparent 40%, rgba(17, 17, 27, 0.95) 100%);
+}
+
+.stat-box {
+    background-color: alpha(@card_bg_color, 0.6);
+    border-radius: 10px;
+    border: 1px solid alpha(@window_fg_color, 0.08);
+    padding: 10px 14px;
+}
+
+.stat-box-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: alpha(@window_fg_color, 0.55);
+}
+
+.stat-box-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: @window_fg_color;
+}
+
+/* ── Spotlight Search Overlay ───────────────────────────────────────────── */
+.spotlight-window {
+    background-color: alpha(@window_bg_color, 0.95);
+    border: 1px solid alpha(@accent_color, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.spotlight-entry {
+    font-size: 16px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+}

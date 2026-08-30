@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e1e2e"/>
+      <stop offset="100%" stop-color="#11111b"/>
+    </linearGradient>
+
+    <!-- Lens Ring Gradient -->
+    <linearGradient id="lens-grad" x1="28" y1="28" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#89b4fa"/>
+      <stop offset="50%" stop-color="#cba6f7"/>
+      <stop offset="100%" stop-color="#f38ba8"/>
+    </linearGradient>
+
+    <!-- Glass Core Gradient -->
+    <radialGradient id="core-glow" cx="64" cy="64" r="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#89b4fa" stop-opacity="0.45"/>
+      <stop offset="70%" stop-color="#cba6f7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#1e1e2e" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Subtle Drop Shadow -->
+    <filter id="shadow" x="8" y="10" width="112" height="112" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Base Plate (GNOME Rounded Squircle) -->
+  <rect x="14" y="14" width="100" height="100" rx="24" fill="url(#bg-grad)" stroke="#313244" stroke-width="2" filter="url(#shadow)"/>
+
+  <!-- Film Perforations on Top/Bottom Rim -->
+  <rect x="24" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="36" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="48" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="60" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="72" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="84" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="96" y="20" width="6" height="4" rx="1.5" fill="#45475a"/>
+
+  <rect x="24" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="36" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="48" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="60" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="72" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="84" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+  <rect x="96" y="104" width="6" height="4" rx="1.5" fill="#45475a"/>
+
+  <!-- Outer Camera Lens Ring -->
+  <circle cx="64" cy="64" r="36" stroke="url(#lens-grad)" stroke-width="4.5" stroke-linecap="round"/>
+
+  <!-- Optical Glass Glow -->
+  <circle cx="64" cy="64" r="30" fill="url(#core-glow)"/>
+
+  <!-- Aperture Blades Silhouette -->
+  <path d="M64 34 L78 50 L64 64 Z" fill="#313244" opacity="0.6"/>
+  <path d="M94 64 L78 78 L64 64 Z" fill="#313244" opacity="0.6"/>
+  <path d="M64 94 L50 78 L64 64 Z" fill="#313244" opacity="0.6"/>
+  <path d="M34 64 L50 50 L64 64 Z" fill="#313244" opacity="0.6"/>
+
+  <!-- Center AI Recommendation Lens Core (Sparkle/Aperture Center) -->
+  <circle cx="64" cy="64" r="14" fill="#181825" stroke="url(#lens-grad)" stroke-width="2"/>
+  
+  <!-- Four-Point AI Discovery Sparkle -->
+  <path d="M64 54 C64 60 60 64 54 64 C60 64 64 68 64 74 C64 68 68 64 74 64 C68 64 64 60 64 54 Z" fill="#cba6f7"/>
+  <circle cx="64" cy="64" r="2.5" fill="#ffffff"/>
+
+  <!-- Subtle Rim Light Accent -->
+  <circle cx="50" cy="50" r="3" fill="#ffffff" opacity="0.4"/>
+</svg>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.reclens.RecLens</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>RecLens</name>
+  <developer id="io.github.as-repo1">
+    <name>RecLens Team</name>
+  </developer>
+  <summary>AI-Powered Movie Discovery &amp; Recommendation Platform</summary>
+
+  <description>
+
+    <p>
+      RecLens is a native modern Linux movie recommendation application built with GTK4 and Libadwaita.
+      Powered by an ultra-portable Top-K sparse similarity model and snappy Parquet catalog, it delivers
+      instant recommendations (&lt;5ms latency) without requiring background daemons.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Instant Ctrl+K Spotlight Search across 15,000+ movies</li>
+      <li>Psychological Mood &amp; Vibe discovery channels</li>
+      <li>Rich movie detail pages with cast, crew, financial stats (profit &amp; ROI), and multi-source ratings</li>
+      <li>Explainable AI recommendations with match reasons</li>
+      <li>Embedded trailer video player</li>
+      <li>Local Watchlist &amp; Watched history with JSON/CSV export and import</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">org.reclens.RecLens.desktop</launchable>
+  <url type="homepage">https://github.com/as-repo1/movie-recommendation-system</url>
+  <provides>
+    <binary>reclens</binary>
+  </provides>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="2.1.0" date="2026-08-30">
+      <description>
+        <p>Initial native GTK4/Libadwaita Linux release with direct in-process ML engine, Top-K sparse indexing, and local SQLite Watchlist.</p>
+      </description>
+    </release>
+  </releases>
+</component>
