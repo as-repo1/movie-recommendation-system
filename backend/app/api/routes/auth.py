@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -17,6 +17,7 @@ router = APIRouter(tags=["authentication"])
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class AuthRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=6)
@@ -27,9 +28,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenResponse(BaseModel):

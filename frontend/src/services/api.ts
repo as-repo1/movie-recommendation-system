@@ -1,21 +1,33 @@
-// Centralised API client
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Centralised API client for RecLens
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export interface Movie {
   id: number;
   title: string;
   overview: string;
+  tagline?: string;
   poster_url: string;
   backdrop_url: string;
   genres: string[];
+  moods?: string[];
   year: number | null;
   vote_average: number;
   vote_count: number;
   runtime: number | null;
   imdb_id: string;
+  imdb_rating?: number | null;
+  rotten_tomatoes_score?: string;
+  metascore?: string;
   director: string;
   writer: string;
+  producers?: string[];
   cast: string[];
+  budget?: number;
+  revenue?: number;
+  certification?: string;
+  trailer_url?: string;
+  match_percentage?: number | null;
+  match_reason?: string;
 }
 
 export interface SearchResponse {
@@ -34,6 +46,13 @@ export interface SimilarResponse {
 export interface PersonalisedResponse {
   recommendations: Movie[];
   engine: string;
+  user_top_genres?: string[];
+}
+
+export interface MoodRecommendationsResponse {
+  mood: string;
+  recommendations: Movie[];
+  total: number;
 }
 
 export interface RatedMovie {
@@ -119,12 +138,18 @@ export const api = {
     get<SearchResponse>(`/api/movies/search?q=${encodeURIComponent(q)}&page=${page}`),
   getMovie: (id: number) =>
     get<Movie>(`/api/movies/${id}`),
-  getSimilar: (id: number, n = 10) =>
-    get<SimilarResponse>(`/api/recommendations/similar/${id}?n=${n}`),
+  getGenres: () =>
+    get<string[]>('/api/movies/genres'),
+
+  // Recommendations
+  getSimilar: (id: number, n = 10, useMmr = true) =>
+    get<SimilarResponse>(`/api/recommendations/similar/${id}?n=${n}&use_mmr=${useMmr}`),
+  getMoodRecommendations: (mood: string, n = 12) =>
+    get<MoodRecommendationsResponse>(`/api/recommendations/mood/${encodeURIComponent(mood)}?n=${n}`),
   getPersonalised: (ratings: RatedMovie[], n = 10) =>
     post<PersonalisedResponse>('/api/recommendations/personalised', { ratings, n }),
   getCatalogue: () =>
-    get<{ id: number; title: string }[]>('/api/recommendations/catalogue'),
+    get<{ id: number; title: string; year?: number; genres?: string[] }[]>('/api/recommendations/catalogue'),
 
   // Watchlist & Watched
   getWatchlist: () =>

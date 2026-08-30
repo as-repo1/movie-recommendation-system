@@ -1,4 +1,4 @@
-"""app/api/routes/recommendations.py — Similar and personalised rec endpoints."""
+"""app/api/routes/recommendations.py — Similar, personalized, and mood recommendation endpoints."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from app.schemas.movie import (
     PersonalisedRequest,
     PersonalisedResponse,
     SimilarMoviesResponse,
+    MoodRecommendationsResponse,
 )
 from app.services.movie_db import get_movie, resolve_poster_url
 from app.core.config import settings
@@ -22,18 +23,19 @@ router = APIRouter(tags=["recommendations"])
 @router.get("/similar/{movie_id}", response_model=SimilarMoviesResponse)
 async def similar(
     movie_id: int,
-    n: int = Query(default=10, ge=1, le=20),
+    n: int = Query(default=10, ge=1, le=24),
+    use_mmr: bool = Query(default=True, description="Apply MMR diversity re-ranking"),
 ):
-    """
-    Return the top-n movies most similar to the given movie.
-    Uses TF-IDF content-based engine. Falls back gracefully if model
-    is not yet trained.
-    """
+    """Return top-n movies most similar to the given movie with Bayesian boost and MMR."""
     source_movie = await get_movie(movie_id)
     if source_movie is None:
         raise HTTPException(status_code=404, detail=f"Movie {movie_id} not found.")
 
-    recommendations, engine = recommendation_service.similar_movies(movie_id, n)
+    recommendations, engine = recommendation_service.similar_movies(
+        movie_id=movie_id,
+        n=n,
+        use_mmr=use_mmr,
+    )
 
     if engine == "unavailable":
         raise HTTPException(
@@ -48,7 +50,8 @@ async def similar(
     ]
     poster_urls = await asyncio.gather(*tasks)
     for m, url in zip(recommendations, poster_urls):
-        m.poster_url = url
+        if url:
+            m.poster_url = url
 
     return SimilarMoviesResponse(
         source_movie=source_movie,
@@ -57,15 +60,40 @@ async def similar(
     )
 
 
+@router.get("/mood/{mood}", response_model=MoodRecommendationsResponse)
+async def mood_recs(
+    mood: str,
+    n: int = Query(default=12, ge=1, le=30),
+):
+    """
+    Return curated recommendations filtered by mood & vibe:
+    - mind-bending (Sci-Fi & psychological mystery)
+    - dark-thriller (Crime, suspense, psychological thriller)
+    - feel-good (Comedy, animation, heartwarming)
+    - adrenaline-action (High-octane action, superhero, adventure)
+    - epic-journey (Fantasy, mythology, grand quests)
+    - emotional-drama (Romance, deep drama)
+    """
+    if not recommendation_service.is_ready:
+        raise HTTPException(status_code=503, detail="Recommendation engine is initializing.")
+
+    recs = recommendation_service.mood_recommendations(mood=mood.strip().lower(), n=n)
+    
+    # Resolve poster URLs in parallel
+    tasks = [resolve_poster_url(m.id, m.title, settings.tmdb_api_key) for m in recs]
+    poster_urls = await asyncio.gather(*tasks)
+    for m, url in zip(recs, poster_urls):
+        if url:
+            m.poster_url = url
+
+    return MoodRecommendationsResponse(mood=mood, recommendations=recs, total=len(recs))
+
+
 @router.post("/personalised", response_model=PersonalisedResponse)
 async def personalised(body: PersonalisedRequest):
     """
-    Return personalised movie recommendations based on the user's ratings.
-
-    The client sends a list of ``{movie_id, rating}`` pairs (from localStorage /
-    SharedPreferences). No server-side user account is required.
-
-    Uses LightFM hybrid model when available; falls back to weighted content-based.
+    Return personalised recommendations based on user ratings (1.0–10.0).
+    Combines LightFM Matrix Factorization, User Taste Profile Vectors, and MMR Diversity.
     """
     if not recommendation_service.is_ready:
         raise HTTPException(
@@ -73,7 +101,11 @@ async def personalised(body: PersonalisedRequest):
             detail="Recommendation model not loaded. Run `python scripts/build_model.py` first.",
         )
 
-    recommendations, engine = recommendation_service.personalised(body.ratings, body.n)
+    recommendations, engine, top_genres = recommendation_service.personalised(
+        ratings=body.ratings,
+        n=body.n,
+        diversity_lambda=body.diversity_lambda,
+    )
 
     if not recommendations:
         raise HTTPException(
@@ -88,21 +120,25 @@ async def personalised(body: PersonalisedRequest):
     ]
     poster_urls = await asyncio.gather(*tasks)
     for m, url in zip(recommendations, poster_urls):
-        m.poster_url = url
+        if url:
+            m.poster_url = url
 
-    return PersonalisedResponse(recommendations=recommendations, engine=engine)
+    return PersonalisedResponse(
+        recommendations=recommendations,
+        engine=engine,
+        user_top_genres=top_genres,
+    )
 
 
 @router.get("/personalised", response_model=PersonalisedResponse)
 async def personalised_db(
-    n: int = Query(default=10, ge=1, le=20),
+    n: int = Query(default=10, ge=1, le=24),
+    diversity_lambda: float = Query(default=0.75, ge=0.0, le=1.0),
     session_id: str = Depends(get_session_id),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Return personalised movie recommendations based on the user's ratings stored in the database.
-
-    Looks up ratings associated with the session ID from X-Session-ID header.
+    Return personalised movie recommendations based on user ratings stored in the database.
     """
     if not recommendation_service.is_ready:
         raise HTTPException(
@@ -125,7 +161,11 @@ async def personalised_db(
         )
 
     ratings = [RatedMovie(movie_id=item.movie_id, rating=item.rating) for item in items]
-    recommendations, engine = recommendation_service.personalised(ratings, n)
+    recommendations, engine, top_genres = recommendation_service.personalised(
+        ratings=ratings,
+        n=n,
+        diversity_lambda=diversity_lambda,
+    )
 
     if not recommendations:
         raise HTTPException(
@@ -140,14 +180,17 @@ async def personalised_db(
     ]
     poster_urls = await asyncio.gather(*tasks)
     for m, url in zip(recommendations, poster_urls):
-        m.poster_url = url
+        if url:
+            m.poster_url = url
 
-    return PersonalisedResponse(recommendations=recommendations, engine=engine)
-
+    return PersonalisedResponse(
+        recommendations=recommendations,
+        engine=engine,
+        user_top_genres=top_genres,
+    )
 
 
 @router.get("/catalogue", response_model=list[dict])
 async def catalogue():
-    """Return a lightweight list of all movies in the dataset (id + title).
-    Used by the frontend / Android app to populate the search dropdown."""
+    """Return a lightweight list of all movies in the dataset."""
     return recommendation_service.get_all_titles()

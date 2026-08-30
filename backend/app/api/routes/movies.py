@@ -1,4 +1,4 @@
-"""app/api/routes/movies.py — Movie search, detail, and popular endpoints."""
+"""app/api/routes/movies.py — Movie search, detail, popular, and genre endpoints."""
 
 from __future__ import annotations
 
@@ -22,13 +22,31 @@ async def search(
 
 @router.get("/popular", response_model=list[Movie])
 async def popular(page: int = Query(default=1, ge=1)):
-    """Return popular movies (TMDB popular → local dataset sorted by votes)."""
+    """Return popular movies with Bayesian score ordering."""
     return await movie_db.get_popular(page)
+
+
+@router.get("/genres", response_model=list[str])
+async def list_genres():
+    """Return all unique genres available in the movie catalog."""
+    df = movie_db._load_local_df()
+    if df.empty or "genres" not in df.columns:
+        return [
+            "Action", "Adventure", "Animation", "Comedy", "Crime",
+            "Documentary", "Drama", "Family", "Fantasy", "History",
+            "Horror", "Music", "Mystery", "Romance", "Science Fiction",
+            "Thriller", "War", "Western"
+        ]
+    all_genres: set[str] = set()
+    for g_list in df["genres"]:
+        if isinstance(g_list, list):
+            all_genres.update(g_list)
+    return sorted(list(all_genres))
 
 
 @router.get("/{movie_id}", response_model=Movie)
 async def detail(movie_id: int):
-    """Fetch full details for a single movie by its TMDB movie ID."""
+    """Fetch comprehensive details for a movie (directors, cast, trailers, ratings)."""
     movie = await movie_db.get_movie(movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail=f"Movie {movie_id} not found.")

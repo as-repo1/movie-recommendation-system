@@ -4,11 +4,14 @@ scripts/build_model.py
 ======================
 CLI script that runs the full preprocessing pipeline and serialises
 ``movies.pkl`` and ``similarity.pkl`` into ``data/processed/``.
+Uses TF-IDF vectorizer with sublinear term frequency scaling and bi-grams
+for high-precision semantic recommendation similarity.
 """
 
 from __future__ import annotations
 
 import argparse
+import pickle
 import sys
 import zipfile
 from pathlib import Path
@@ -17,9 +20,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import pickle
 
 from src.preprocessing import build_tags_dataframe
 
@@ -32,8 +34,8 @@ from src.preprocessing import build_tags_dataframe
 def _maybe_unzip(raw_dir: Path) -> None:
     """Unzip dataset archives if the CSVs are not already present."""
     archives = {
-        "tmdb_5000_movies.csv":   "tmdb_5000_movies.csv.zip",
-        "tmdb_5000_credits.csv":  "tmdb_5000_credits.csv.zip",
+        "tmdb_5000_movies.csv":  "tmdb_5000_movies.csv.zip",
+        "tmdb_5000_credits.csv": "tmdb_5000_credits.csv.zip",
     }
     for csv_name, zip_name in archives.items():
         csv_path = raw_dir / csv_name
@@ -60,23 +62,24 @@ def _save_pickle(obj: object, path: Path) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Main
+# Main Build Routine
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def build(
     raw_dir: Path,
     output_dir: Path,
-    max_features: int,
-    dataset: str,
-    archive_path: Path,
-    vote_threshold: int,
+    max_features: int = 8000,
+    vectorizer_type: str = "tfidf",
+    dataset: str = "tmdb5000",
+    archive_path: Path | None = None,
+    vote_threshold: int = 30,
 ) -> None:
     print("\n── Step 1/4  Check datasets ────────────────────────────────────")
     if dataset == "tmdb5000":
         _maybe_unzip(raw_dir)
 
-    print("\n── Step 2/4  Preprocess & build tags ──────────────────────────")
+    print("\n── Step 2/4  Preprocess & build rich metadata tags ─────────────")
     df = build_tags_dataframe(
         raw_dir=raw_dir,
         dataset=dataset,
@@ -84,11 +87,25 @@ def build(
         vote_threshold=vote_threshold,
     )
     print(f"[INFO]  Dataset shape: {df.shape}")
+    print(f"[INFO]  Columns: {df.columns.tolist()}")
 
-    print("\n── Step 3/4  Vectorise with CountVectorizer ───────────────────")
-    cv = CountVectorizer(max_features=max_features, stop_words="english")
-    vectors = cv.fit_transform(df["tags"]).toarray()
-    print(f"[INFO]  Vector shape: {vectors.shape}")
+    print(f"\n── Step 3/4  Vectorise with {vectorizer_type.upper()} (max_features={max_features}) ──")
+    if vectorizer_type.lower() == "tfidf":
+        vec = TfidfVectorizer(
+            max_features=max_features,
+            stop_words="english",
+            ngram_range=(1, 2),
+            sublinear_tf=True,
+        )
+    else:
+        vec = CountVectorizer(
+            max_features=max_features,
+            stop_words="english",
+            ngram_range=(1, 2),
+        )
+
+    vectors = vec.fit_transform(df["tags"])
+    print(f"[INFO]  Vector matrix shape: {vectors.shape}")
 
     print("\n── Step 4/4  Compute cosine similarity & save ─────────────────")
     similarity = cosine_similarity(vectors).astype("float32")
@@ -122,8 +139,15 @@ def main() -> None:
     parser.add_argument(
         "--max-features",
         type=int,
-        default=5000,
-        help="Maximum vocabulary size for CountVectorizer (default: 5000).",
+        default=8000,
+        help="Maximum vocabulary size for vectorizer (default: 8000).",
+    )
+    parser.add_argument(
+        "--vectorizer",
+        type=str,
+        choices=["tfidf", "count"],
+        default="tfidf",
+        help="Vectorizer algorithm to use (default: tfidf).",
     )
     parser.add_argument(
         "--dataset",
@@ -149,6 +173,7 @@ def main() -> None:
         raw_dir=args.raw_dir,
         output_dir=args.output_dir,
         max_features=args.max_features,
+        vectorizer_type=args.vectorizer,
         dataset=args.dataset,
         archive_path=args.archive_path,
         vote_threshold=args.vote_threshold,

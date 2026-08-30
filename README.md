@@ -1,147 +1,123 @@
-# RecLens — AI-Powered Movie Recommendation System
+# RecLens — AI-Powered Movie Recommendation & Multi-Source Platform
 
-RecLens is a premium, multi-service movie recommendation platform. It combines a high-performance **FastAPI ML-serving API**, a sleek **React + Vite + TypeScript web application**, a native **Jetpack Compose Android app**, and a production-ready **Docker Compose** orchestration stack.
-
-Recommendations are served using a hybrid engine:
-1. **Content-Based Filtering**: TF-IDF vectorization and cosine similarity over movie metadata (genres, keywords, overview, cast, and crew).
-2. **Collaborative Filtering**: Personalized recommendations using user rating histories powered by **LightFM**.
+RecLens is a multi-service movie recommendation and discovery platform. It combines an advanced **FastAPI ML-serving API**, a sleek **React + Vite + TypeScript web application**, a standalone **Streamlit AI Explorer (`streamlit_app.py`)**, a native **Jetpack Compose Android app**, and a production **Docker Compose** stack.
 
 ---
 
-## Key Features
+## 🚀 Advanced Recommendation Engine
 
-- 🔍 **Instant Global Search**: Debounced search-as-you-type header component with TMDB, OMDb, and fallback local dataset resolution.
-- 🎬 **Premium Detail Views**: Nord-themed details cards featuring Director, Writer, actor chips, and dynamic TMDB/OMDb posters.
-- 📋 **Tracking Lists**: Local/database-backed watchlists and watched ratings (interactive 1-10 stars).
-- 🔑 **Authentication & Migration**: Secure JWT-based registration and login, with seamless migration of anonymous user sessions to account storage.
-- 🐳 **Docker-First Deployment**: Single-command orchestration combining Nginx proxying, PostgreSQL, static web serving, and backend health validation.
-- 📱 **Native Mobile Experience**: Android client featuring bottom navigation tabs, Coil image loading, and SharedPreferences storage.
+RecLens serves recommendations using a multi-factor hybrid intelligence stack:
+
+1. **Multi-Factor Semantic TF-IDF Vectorization**:
+   - Sub-field weighting: Directors ($3\times$), Writers ($2\times$), Genres ($2\times$), Top Cast ($2\times$), Keywords ($2\times$), Overview, and Tagline.
+   - N-gram feature mapping $(1, 2)$ with sublinear term frequency scaling.
+2. **Bayesian Weighted Quality Score ($WR$)**:
+   - Integrates the Bayesian rating formula $WR = \frac{v}{v+m} \cdot R + \frac{m}{v+m} \cdot C$ so highly rated matches are prioritized over obscure noise.
+3. **Maximal Marginal Relevance (MMR) Diversity Re-Ranking**:
+   - Re-ranks candidates ($\lambda=0.75$) to balance semantic similarity and genre diversity, preventing repetitive franchise clusters.
+4. **Mood & Vibe Explorer**:
+   - Curated vibes: *Mind-Bending & Sci-Fi, Dark & Gritty Thrillers, Heartwarming Comfort, Adrenaline & Action, Epic Fantasy, Emotional Drama*.
+5. **Collaborative Filtering**:
+   - Personalized hybrid recommendations powered by **LightFM Matrix Factorization** and User Taste Profile Vectors.
+6. **Explainable AI Match Chips**:
+   - Calculates match percentages and human-readable explanation reasons (*e.g., "96% Match · Directed by Christopher Nolan & Sci-Fi Theme"*).
 
 ---
 
-## Project Structure
+## 🌐 Multi-Tier Movie Database & Context Engine
+
+- **Tier 1 — TMDB API v3**: Live search, trending, YouTube trailer video embeds, high-res posters, backdrops, and full cast/crew.
+- **Tier 2 — OMDb API**: Multi-source score aggregator providing Rotten Tomatoes Tomatometer, Metacritic, IMDb rating & votes, Box Office, and Awards.
+- **Tier 3 — Wikipedia Context**: Direct IMDb and Wikipedia search links for plot trivia and production history.
+- **Tier 4 — Enriched Local Database**: Complete local dataset with directors, cast, budget, revenue, moods, and keywords, enabling 100% offline functionality.
+- **Dynamic Catalog Sync (`scripts/sync_tmdb.py`)**: One-command sync tool to fetch, ingest, and index new releases from TMDB.
+
+---
+
+## 📁 Project Structure
 
 ```
 movie-recommendation-system/
 ├── backend/                # FastAPI ML Serving API (RecLens API)
 │   ├── app/
-│   │   ├── core/           # Configuration, Database engine initialization, Schema migrations
-│   │   ├── models/         # SQLAlchemy DB ORM schemas (Users, Watchlist, Watched list)
+│   │   ├── core/           # Configuration, Database engine, Schema migrations
+│   │   ├── models/         # SQLAlchemy DB ORM schemas (Users, Watchlist, Watched)
 │   │   ├── schemas/        # Pydantic request & response models
-│   │   ├── services/       # Movie lookup resolver (TMDB/OMDb/Local) & Recommender logic
+│   │   ├── services/       # Multi-source movie aggregator & Recommendation engine
 │   │   └── api/            # API Route handlers (Auth, Movies, Recommendations, Watchlist, Watched)
 │   ├── ml/                 # Saved model binaries
 │   └── Dockerfile
 ├── frontend/               # React + Vite + TypeScript Single-Page App (RecLens Web)
 │   ├── src/
-│   │   ├── components/     # UI elements (Navbar with Search, MovieCard, Skeletons, RatingStars)
-│   │   ├── pages/          # Home, MovieDetail, Watchlist, Watched pages
-│   │   ├── store/          # Zustand global stores (movie tracking & user authentication)
-│   │   └── services/api.ts # API client with dynamic anonymous/authenticated header injection
+│   │   ├── components/     # UI elements (Navbar with Search, MovieCard, Skeletons, RatingStars, AuthModal)
+│   │   ├── pages/          # Home (Mood Explorer), MovieDetail (Trailers & Multi-scores), Watchlist, Watched
+│   │   ├── store/          # Zustand global stores (movies, auth, theme)
+│   │   └── services/api.ts # API client with dynamic auth/session injection
 │   └── Dockerfile
-├── android/                # Native Jetpack Compose App (CineMatch)
-│   ├── app/src/main/       # Manifest, resources, and Kotlin sources
-│   │   └── java/
-│   │       └── ui/         # Composable screens (Home, Search, Detail, Watchlist, Watched)
-│   └── build.gradle.kts
-├── nginx/
-│   └── nginx.conf          # Nginx reverse proxy configuration for docker
+├── streamlit_app.py        # Standalone Streamlit CineMatch interface
+├── tests/                  # Automated pytest test suite (API, Recommender, Preprocessing)
+├── scripts/
+│   ├── build_model.py      # TF-IDF model generator
+│   ├── train_lightfm.py    # LightFM collaborative filtering training script
+│   └── sync_tmdb.py        # Dynamic TMDB catalog synchronization tool
 ├── data/
-│   ├── raw/                # TMDB 5000 movies datasets
-│   └── processed/          # Saved model pickles (movies.pkl, similarity.pkl)
+│   ├── raw/                # TMDB & MovieLens datasets
+│   └── processed/          # Pickled models (movies.pkl, similarity.pkl, lightfm_model.pkl)
 ├── docker-compose.yml       # Production Compose file (Postgres + Backend + Frontend + Nginx)
-├── docker-compose.dev.yml   # Hot-reloading development overrides
 └── .env.example             # Environment variable template
 ```
 
 ---
 
-## Getting Started
+## 🔧 Quick Start & Local Setup
 
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- Docker & Docker Compose
-
----
-
-## 🐳 Docker Deployment (Recommended)
-
-Docker Compose is the easiest way to launch the entire stack (FastAPI, React served via `serve`, PostgreSQL, and Nginx proxy). 
-
-### 1. Build local datasets
-Before running containers, you must unzip the TMDB datasets and generate the pickle model binaries:
+### 1. Build Datasets & ML Models
 ```bash
-pip install -r requirements.txt
-python scripts/build_model.py
-```
+# Setup virtualenv and install dependencies
+uv venv --python 3.11 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt -r backend/requirements.txt
 
-### 2. Configure Environment
-Copy the configuration template:
-```bash
-cp .env.example .env
-```
-*(Optional: Add your `TMDB_API_KEY` or `OMDB_API_KEY` to `.env` to enable online metadata and posters).*
-
-### 3. Launch the Stack
-```bash
-docker compose up -d --build
-```
-This automatically sets up the PostgreSQL database and starts the services.
-
-### Access Points
-- **Web Application Portal**: [http://localhost/](http://localhost/) (Port 80)
-- **FastAPI Interactive Documentation**: [http://localhost/docs](http://localhost/docs)
-- **API Health Check**: [http://localhost/health](http://localhost/health)
-
----
-
-## 🔧 Local Development Setup
-
-To run services locally (outside of Docker), the backend defaults to a zero-configuration SQLite database (`data/db.sqlite`), removing the need for a running DB engine.
-
-### 1. Backend Server
-```bash
-# Set up model datasets
-pip install -r requirements.txt
+# Build Content-Based TF-IDF Model
 python scripts/build_model.py
 
-# Run FastAPI backend
+# Train Hybrid Collaborative Model
+python scripts/train_lightfm.py --epochs 8
+```
+
+### 2. Run Test Suite
+```bash
+pytest -v
+```
+
+### 3. Run FastAPI Backend
+```bash
 cd backend
-pip install -r requirements.txt
 uvicorn app.main:app --port 8000 --reload
 ```
+Interactive Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 2. Frontend Server
+### 4. Run React Web Client
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:5173/](http://localhost:5173/) in your browser. API requests are automatically proxied to port 8000.
+Open [http://localhost:5173/](http://localhost:5173/) in your browser.
 
-### 3. Native Android Client
-Import the `android/` directory into Android Studio. The app's `CineMatchApi` points to the emulator loopback `http://10.0.2.2:8000` by default.
-
----
-
-## ⚙️ How Recommendation Engine Works
-
-1. **Content-Based Filtering**:
-   - Compiles movie attributes (`genres`, `keywords`, `overview`, `cast`, `crew`) into a unified string.
-   - Stemming is applied via Porter Stemmer.
-   - Vectorized using `CountVectorizer` (5000 features).
-   - Generates an $N \times N$ cosine similarity matrix (pickled to `similarity.pkl`).
-
-2. **Collaborative Filtering**:
-   - Utilizes `LightFM` hybrid matrix factorization.
-   - Tailors recommendations using user ratings (1-10) combined with metadata features.
+### 5. Run Streamlit Explorer
+```bash
+streamlit run streamlit_app.py
+```
 
 ---
 
-## 🛡️ Security & Sessions
+## 🐳 Docker Deployment
 
-- **Anonymous Sessions**: Assigns a persistent UUID to visitors (`reclens-session-id`). List updates are saved against this session ID.
-- **User Authentication**: Secure signup and login using JWT tokens and bcrypt hashing.
-- **Session Migration**: Upon user login, anonymous sessions are merged automatically into the registered user's account records.
-- **Git Exclusions**: Database state files (`.sqlite`, `.db`) are explicitly excluded in `.gitignore` to prevent leaking session states.
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+- **Web App**: [http://localhost/](http://localhost/)
+- **API Docs**: [http://localhost/docs](http://localhost/docs)
+- **Health Check**: [http://localhost/health](http://localhost/health)

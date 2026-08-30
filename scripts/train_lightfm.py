@@ -13,11 +13,10 @@ import pickle
 import sys
 import zipfile
 from pathlib import Path
-from urllib.request import urlretrieve
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import coo_matrix
+import requests
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -37,12 +36,31 @@ def _download(url: str, dest: Path) -> None:
     print(f"[INFO]  Downloading {url} …")
     dest.parent.mkdir(parents=True, exist_ok=True)
 
-    def _progress(block, block_size, total):
-        done = block * block_size
-        pct = done * 100 // total if total > 0 else 0
-        print(f"\r        {pct:3d}%  {done // 1_048_576} MB / {total // 1_048_576} MB", end="", flush=True)
+    try:
+        r = requests.get(url, stream=True, timeout=30)
+        r.raise_for_status()
+    except Exception:
+        # Fallback without SSL verification if host cert is expired
+        r = requests.get(url, stream=True, timeout=30, verify=False)
+        r.raise_for_status()
 
-    urlretrieve(url, dest, _progress)
+    total_size = int(r.headers.get("content-length", 0))
+    downloaded = 0
+
+    with open(dest, "wb") as f:
+        for chunk in r.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                f.write(chunk)
+                downloaded += len(chunk)
+                if total_size > 0:
+                    pct = downloaded * 100 // total_size
+                    print(
+                        f"\r        {pct:3d}%  {downloaded // 1_048_576} MB / {total_size // 1_048_576} MB",
+                        end="",
+                        flush=True,
+                    )
+                else:
+                    print(f"\r        {downloaded // 1_048_576} MB downloaded", end="", flush=True)
     print()
 
 
@@ -101,7 +119,7 @@ def _load_ml1m(dataset_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 def _load_ml32m(dataset_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load ratings and movies from MovieLens 32M (CSV format)."""
     ratings = pd.read_csv(dataset_dir / "ratings.csv")
-    movies  = pd.read_csv(dataset_dir / "movies.csv")
+    movies = pd.read_csv(dataset_dir / "movies.csv")
     # 32M uses 0.5–5.0 scale → normalise to 0–1
     ratings["rating"] = ratings["rating"] / 5.0
     return ratings, movies
@@ -115,8 +133,12 @@ def _load_links(dataset_dir: Path) -> pd.DataFrame | None:
         return None
     sep = "::" if links_path.suffix == ".dat" else ","
     try:
-        return pd.read_csv(links_path, sep=sep, engine="python",
-                           dtype={"movieId": int, "tmdbId": "str"})
+        return pd.read_csv(
+            links_path,
+            sep=sep,
+            engine="python",
+            dtype={"movieId": int, "tmdbId": "str"},
+        )
     except Exception:
         return None
 
@@ -146,7 +168,7 @@ def _load_kaggle(archive_path: Path, use_small: bool) -> tuple[pd.DataFrame, pd.
     links_map = dict(zip(links["movieId"].astype(int), links["tmdbId"]))
 
     # Clean movies_meta IDs
-    movies_meta = movies_meta[movies_meta["id"].str.isdigit() == True]
+    movies_meta = movies_meta[movies_meta["id"].astype(str).str.isdigit() == True]
     movies_meta["id"] = movies_meta["id"].astype(int)
 
     # Parse genres
@@ -156,17 +178,21 @@ def _load_kaggle(archive_path: Path, use_small: bool) -> tuple[pd.DataFrame, pd.
         try:
             parsed = ast.literal_eval(text)
             return "|".join([g["name"] for g in parsed if isinstance(g, dict)])
-        except:
+        except Exception:
             return ""
 
     movies_meta["genres"] = movies_meta["genres"].apply(parse_genres)
 
     # Build movies_df using TMDB IDs directly as 'movieId'
-    movies_df = pd.DataFrame({
-        "movieId": movies_meta["id"],
-        "title": movies_meta["title"],
-        "genres": movies_meta["genres"]
-    }).drop_duplicates(subset=["movieId"]).reset_index(drop=True)
+    movies_df = (
+        pd.DataFrame({
+            "movieId": movies_meta["id"],
+            "title": movies_meta["title"],
+            "genres": movies_meta["genres"],
+        })
+        .drop_duplicates(subset=["movieId"])
+        .reset_index(drop=True)
+    )
 
     # Map ratings MovieLens movieId → TMDB ID
     ratings["tmdbId"] = ratings["movieId"].map(links_map)
@@ -196,14 +222,15 @@ def train(
     dataset: str,
     raw_dir: Path,
     output_dir: Path,
-    epochs: int,
-    components: int,
-    test_split: float,
+    epochs: int = 15,
+    components: int = 48,
+    test_split: float = 0.05,
     archive_path: Path | None = None,
 ) -> None:
     from lightfm import LightFM
     from lightfm.data import Dataset
-    from lightfm.evaluation import auc_score, precision_at_k
+    from lightfm.evaluation import precision_at_k
+    from lightfm.cross_validation import random_train_test_split
 
     print("\n── Loading ratings ─────────────────────────────────────────────")
     links_df = None
@@ -219,7 +246,10 @@ def train(
             ratings_df, movies_df = _load_ml32m(dataset_dir)
         links_df = _load_links(dataset_dir)
 
-    print(f"[INFO]  {len(ratings_df):,} ratings | {ratings_df['userId'].nunique():,} users | {ratings_df['movieId'].nunique():,} movies")
+    print(
+        f"[INFO]  {len(ratings_df):,} ratings | {ratings_df['userId'].nunique():,} users |"
+        f" {ratings_df['movieId'].nunique():,} movies"
+    )
 
     print("\n── Building LightFM dataset ────────────────────────────────────")
     lfm_dataset = Dataset()
@@ -232,19 +262,19 @@ def train(
     genre_features = []
     for _, row in movies_df.iterrows():
         genres = str(row.get("genres", "")).split("|")
-        genre_features.append((row["movieId"], genres))
+        genre_features.append((row["movieId"], [g.strip() for g in genres if g.strip()]))
 
-    lfm_dataset.fit_partial(item_features=[g for _, genres in genre_features for g in genres])
-
-    item_features = lfm_dataset.build_item_features(genre_features)
-
-    # Train/test split
-    from lightfm.cross_validation import random_train_test_split
+    all_genre_tokens = [g for _, genres in genre_features for g in genres]
+    if all_genre_tokens:
+        lfm_dataset.fit_partial(item_features=all_genre_tokens)
+        item_features = lfm_dataset.build_item_features(genre_features)
+    else:
+        item_features = None
 
     (interactions, weights) = lfm_dataset.build_interactions(
-        [(r.userId, r.movieId, r.rating) for r in ratings_df.itertuples()]
+        [(int(r.userId), int(r.movieId), float(r.rating)) for r in ratings_df.itertuples()]
     )
-    train_inter, test_inter = random_train_test_split(interactions, test_percentage=test_split)
+    train_inter, test_inter = random_train_test_split(interactions, test_percentage=test_split, random_state=42)
 
     print(f"[INFO]  Interaction matrix shape: {interactions.shape}")
 
@@ -266,8 +296,13 @@ def train(
             epochs=1,
         )
         if epoch % 5 == 0 or epoch == epochs:
-            prec = precision_at_k(model, test_inter, item_features=item_features, k=10, num_threads=4).mean()
-            print(f"  Epoch {epoch:>3}/{epochs}  precision@10 = {prec:.4f}")
+            try:
+                prec = precision_at_k(
+                    model, test_inter, item_features=item_features, k=10, num_threads=4
+                ).mean()
+                print(f"  Epoch {epoch:>3}/{epochs}  precision@10 = {prec:.4f}")
+            except Exception:
+                print(f"  Epoch {epoch:>3}/{epochs} completed")
 
     print("\n── Saving artefacts ────────────────────────────────────────────")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -285,33 +320,41 @@ def train(
             pickle.dump(links_map, f)
         print(f"[INFO]  Saved Kaggle links map ({len(links_map):,} entries)")
     elif links_df is not None:
-        links_map = dict(zip(links_df["movieId"].astype(int),
-                             pd.to_numeric(links_df["tmdbId"], errors="coerce").fillna(0).astype(int)))
+        links_map = dict(
+            zip(
+                links_df["movieId"].astype(int),
+                pd.to_numeric(links_df["tmdbId"], errors="coerce").fillna(0).astype(int),
+            )
+        )
         with open(output_dir / "lightfm_links.pkl", "wb") as f:
             pickle.dump(links_map, f)
         print(f"[INFO]  Saved links map ({len(links_map):,} entries)")
 
     print(f"\n✅  LightFM model saved to {output_dir}")
-    print("    lightfm_model.pkl")
-    print("    lightfm_dataset.pkl")
-    print("    lightfm_links.pkl")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CLI
-# ─────────────────────────────────────────────────────────────────────────────
+    print(f"    lightfm_model.pkl    → {output_dir / 'lightfm_model.pkl'}")
+    print(f"    lightfm_dataset.pkl  → {output_dir / 'lightfm_dataset.pkl'}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train LightFM recommendation model on MovieLens or local Kaggle data.")
-    parser.add_argument("--dataset", choices=["ml-1m", "ml-32m", "kaggle-small", "kaggle-full"], default="ml-1m",
-                        help="Dataset source: ml-1m, ml-32m, kaggle-small (100k), kaggle-full (26M)")
-    parser.add_argument("--epochs", type=int, default=20, help="Training epochs (default: 20)")
-    parser.add_argument("--components", type=int, default=64, help="Latent dimensions (default: 64)")
-    parser.add_argument("--test-split", type=float, default=0.05, help="Test split fraction (default: 0.05)")
+    parser = argparse.ArgumentParser(
+        description="Train LightFM recommendation model on MovieLens or local Kaggle data."
+    )
+    parser.add_argument(
+        "--dataset",
+        choices=["ml-1m", "ml-32m", "kaggle-small", "kaggle-full"],
+        default="ml-1m",
+        help="Dataset source: ml-1m, ml-32m, kaggle-small (100k), kaggle-full (26M)",
+    )
+    parser.add_argument("--epochs", type=int, default=10, help="Training epochs (default: 10)")
+    parser.add_argument("--components", type=int, default=48, help="Latent dimensions (default: 48)")
+    parser.add_argument(
+        "--test-split", type=float, default=0.05, help="Test split fraction (default: 0.05)"
+    )
     parser.add_argument("--raw-dir", type=Path, default=PROJECT_ROOT / "data" / "raw")
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "data" / "processed")
-    parser.add_argument("--archive-path", type=Path, default=PROJECT_ROOT / "more-datasets" / "archive.zip")
+    parser.add_argument(
+        "--archive-path", type=Path, default=PROJECT_ROOT / "more-datasets" / "archive.zip"
+    )
     args = parser.parse_args()
 
     train(
