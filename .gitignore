@@ -1,11 +1,14 @@
-# ── Generated model files ─────────────────────────────────────────────────────
+# ── Generated model files & processed data ──────────────────────────────────
 data/processed/
+*.parquet
 
-# ── Unzipped CSVs & MovieLens datasets ───────────────────────────────────────
+# ── Raw Large Datasets & Archives (TMDB 1.2M+, Kaggle, MovieLens) ─────────────
+data/*.csv
 data/raw/*.csv
 data/raw/ml-1m/
 data/raw/ml-32m/
 data/raw/*.zip
+data/*.zip
 
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
@@ -17,6 +20,8 @@ build/
 .eggs/
 .venv/
 venv/
+.pytest_cache/
+*.log
 
 # ── Jupyter ───────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
@@ -54,4 +59,5 @@ data/*.sqlite3
 # ── Datasets & Temporary Files ───────────────────────────────────────────────
 more-datasets/
 scratch/
+
 

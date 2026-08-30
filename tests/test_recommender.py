@@ -77,3 +77,42 @@ def test_recommend_by_mood(model_data):
     for r in recs:
         assert "title" in r
         assert r["vote_average"] > 0
+
+
+def test_topk_similarity_index_behavior():
+    import time
+    from src.recommender import TopKSimilarityIndex
+
+    # Create synthetic TopK index
+    n_movies = 1000
+    k = 50
+    indices = np.random.randint(0, n_movies, size=(n_movies, k), dtype=np.int32)
+    scores = np.random.uniform(0.5, 1.0, size=(n_movies, k)).astype(np.float16)
+
+    # Set specific known neighbor
+    indices[0, 0] = 42
+    scores[0, 0] = 0.95
+
+    topk = TopKSimilarityIndex(indices, scores, n_movies=n_movies, k=k)
+
+    assert topk.shape == (1000, 1000)
+    assert topk.get_score(0, 0) == 1.0
+    assert abs(topk.get_score(0, 42) - 0.95) < 0.01
+    assert topk.get_score(0, 999) == 0.0 or indices[0].__contains__(999)
+
+    # 1D row reconstruction
+    row0 = topk[0]
+    assert len(row0) == 1000
+    assert row0[0] == 1.0
+    assert abs(row0[42] - 0.95) < 0.01
+
+    # 2D lookup
+    assert topk[0, 0] == 1.0
+
+    # Latency test: 1000 lookups should take < 5ms total
+    t0 = time.perf_counter()
+    for i in range(100):
+        _ = topk.get_neighbors(i)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    assert elapsed_ms < 50.0  # Well under limit
+

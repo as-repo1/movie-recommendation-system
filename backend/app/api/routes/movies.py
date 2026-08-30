@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Query
+
 
 from app.schemas.movie import Movie, MovieSearchResponse
 from app.services import movie_db
@@ -39,9 +41,18 @@ async def list_genres():
         ]
     all_genres: set[str] = set()
     for g_list in df["genres"]:
-        if isinstance(g_list, list):
-            all_genres.update(g_list)
-    return sorted(list(all_genres))
+        if isinstance(g_list, (list, tuple, np.ndarray)):
+            for g in g_list:
+                g_str = str(g).strip()
+                if g_str and g_str.lower() not in ("none", "nan", "null"):
+                    all_genres.add(g_str)
+    return sorted(list(all_genres)) or [
+        "Action", "Adventure", "Animation", "Comedy", "Crime",
+        "Documentary", "Drama", "Family", "Fantasy", "History",
+        "Horror", "Music", "Mystery", "Romance", "Science Fiction",
+        "Thriller", "War", "Western"
+    ]
+
 
 
 @router.get("/{movie_id}", response_model=Movie)

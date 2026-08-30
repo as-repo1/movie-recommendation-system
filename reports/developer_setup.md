@@ -33,24 +33,25 @@ cp .env.example .env
 
 The recommendation engines rely on pre-calculated models.
 
-### 3.1 Rebuilding Content-Based Cosine Model
-The Content-Based filtering uses TF-IDF matrices computed from local datasets:
+### 3.1 Building the Portable Recommendation Model
+The Content-Based filtering uses feature-weighted TF-IDF matrices and Top-K sparse indexing:
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Option A: Ingest full 1.23M TMDB dataset into ultra-portable Top-K index
+python scripts/ingest_tmdb_daily.py data/TMDB_all_movies.csv --top-k 100 --min-votes 20 --top-n 15000
 
-# Run the build model pipeline
-python scripts/build_model.py
+# Option B: Run standard build from TMDB 5000
+python scripts/build_model.py --top-k 100
 ```
-This processes raw datasets inside `data/raw/`, vectorizes movie text tags, and outputs:
-- `data/processed/movies.pkl` (Pandas DataFrame containing cleaned metadata)
-- `data/processed/similarity.pkl` (Compressed Cosine Similarity float matrix)
+This cleans and sanitizes raw datasets, extracts moods, profit, and runtime classes, vectorizes movie text tags, and outputs:
+- `data/processed/movies.pkl` (Cleaned DataFrame containing rich metadata)
+- `data/processed/similarity.pkl` (Ultra-portable 8.58MB Top-K sparse float16 index)
+- `data/processed/movies_clean.parquet` (Snappy-compressed columnar database for high-speed catalog querying)
 
 ### 3.2 Training the Hybrid Collaborative Model
 Collaborative recommendations are computed using LightFM trained on the MovieLens dataset:
 ```bash
 # Run training script
-python scripts/train_lightfm.py
+python scripts/train_lightfm.py --epochs 8
 ```
 This outputs user-item latent parameters and bias weights supporting real-time hybrid predictions.
 
@@ -61,11 +62,9 @@ This outputs user-item latent parameters and bias weights supporting real-time h
 ### 4.1 FastAPI Backend (SQLite Mode)
 When run locally outside Docker, the backend defaults to SQLite (`data/db.sqlite`):
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+PYTHONPATH=backend:. uvicorn app.main:app --reload --port 8001
 ```
-API Documentation is served at `http://localhost:8000/docs`.
+API Documentation is served at `http://localhost:8001/docs`.
 
 ### 4.2 React Web Client (Vite Dev Server)
 ```bash
@@ -74,6 +73,7 @@ npm install
 npm run dev
 ```
 Served locally at `http://localhost:5173`.
+
 
 ---
 

@@ -276,9 +276,14 @@ class RecommendationService:
     # ─────────────────────────────────────────────────────────────────────────────
 
     def _row_to_movie(self, row: pd.Series) -> Movie:
-        genres = row.get("genres", []) if isinstance(row.get("genres"), list) else []
-        moods = row.get("moods", []) if isinstance(row.get("moods"), list) else []
-        cast = row.get("cast", []) if isinstance(row.get("cast"), list) else []
+        def _to_str_list(val) -> list[str]:
+            if isinstance(val, (list, tuple, np.ndarray, set)):
+                return [str(x) for x in val if x is not None and str(x).strip()]
+            return []
+
+        genres = _to_str_list(row.get("genres", []))
+        moods = _to_str_list(row.get("moods", []))
+        cast = _to_str_list(row.get("cast", []))
 
         poster_path = str(row.get("poster_path", "") or "").strip()
         poster_url = f"https://image.tmdb.org/t/p/w500/{poster_path.lstrip('/')}" if poster_path and poster_path != "nan" else ""
@@ -303,21 +308,28 @@ class RecommendationService:
         )
 
     def _dict_to_movie(self, d: dict[str, Any]) -> Movie:
+        def _to_str_list(val) -> list[str]:
+            if isinstance(val, (list, tuple, np.ndarray, set)):
+                return [str(x) for x in val if x is not None and str(x).strip()]
+            return []
+
         return Movie(
             id=int(d["movie_id"]),
             title=str(d["title"]),
             overview=str(d.get("overview", "")),
             tagline=str(d.get("tagline", "")),
-            genres=d.get("genres", []),
+            genres=_to_str_list(d.get("genres", [])),
+            moods=_to_str_list(d.get("moods", [])),
             year=d.get("year"),
             vote_average=float(d.get("vote_average", 0)),
             vote_count=int(d.get("vote_count", 0)),
             director=str(d.get("director", "")),
             writer=str(d.get("writer", "")),
-            cast=d.get("cast", []),
+            cast=_to_str_list(d.get("cast", [])),
             match_percentage=d.get("match_percentage"),
             match_reason=d.get("match_reason", ""),
         )
+
 
     def get_all_titles(self) -> list[dict]:
         """Return a lightweight list of all movies for search dropdown."""

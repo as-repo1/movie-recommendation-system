@@ -23,9 +23,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import numpy as np
 import pandas as pd
 
 from app.core.config import settings
+
 from app.schemas.movie import Movie
 
 logger = logging.getLogger(__name__)
@@ -47,9 +49,18 @@ _MOVIE_EXTRA_CACHE: dict[int, dict[str, Any]] = {}
 
 @lru_cache(maxsize=1)
 def _load_local_df() -> pd.DataFrame:
-    """Load the preprocessed enriched DataFrame (movies.pkl or fallback CSV)."""
+    """Load the preprocessed enriched DataFrame (movies_clean.parquet, movies.pkl, or fallback CSV)."""
+    parquet = settings.processed_dir / "movies_clean.parquet"
     pkl = settings.processed_dir / "movies.pkl"
     csv = settings.raw_dir / "tmdb_5000_movies.csv"
+
+    if parquet.exists():
+        try:
+            df = pd.read_parquet(parquet)
+            logger.info("Local dataset loaded from movies_clean.parquet (%d movies)", len(df))
+            return df
+        except Exception as e:
+            logger.warning("Failed to load movies_clean.parquet: %s", e)
 
     if pkl.exists():
         try:
@@ -59,7 +70,7 @@ def _load_local_df() -> pd.DataFrame:
         except Exception as e:
             logger.warning("Failed to load movies.pkl: %s", e)
 
-    # Fallback to raw CSV if pkl missing
+    # Fallback to raw CSV if pkl/parquet missing
     if csv.exists():
         try:
             df = pd.read_csv(csv)
@@ -74,17 +85,18 @@ def _load_local_df() -> pd.DataFrame:
     return pd.DataFrame(columns=["movie_id", "title"])
 
 
+
 def _row_to_movie(row: pd.Series) -> Movie:
     """Convert an enriched DataFrame row to a comprehensive Movie schema object."""
     import ast
 
     def _ensure_list(val) -> list[str]:
-        if isinstance(val, list):
-            return [str(x) for x in val]
+        if isinstance(val, (list, tuple, np.ndarray, set)):
+            return [str(x) for x in val if x is not None and str(x).strip()]
         if isinstance(val, str) and val.strip():
             try:
                 parsed = ast.literal_eval(val)
-                if isinstance(parsed, list):
+                if isinstance(parsed, (list, tuple, set)):
                     return [
                         str(g["name"]) if isinstance(g, dict) and "name" in g else str(g)
                         for g in parsed
@@ -92,6 +104,7 @@ def _row_to_movie(row: pd.Series) -> Movie:
             except Exception:
                 return [s.strip() for s in val.split(",") if s.strip()]
         return []
+
 
     title = str(row.get("title", "") or "")
     m_id = int(row.get("movie_id", row.get("id", 0)))
