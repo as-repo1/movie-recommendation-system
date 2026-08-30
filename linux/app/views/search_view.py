@@ -19,14 +19,19 @@ class SearchView(Gtk.ScrolledWindow):
     def __init__(self, on_movie_selected: Callable[[int], None]) -> None:
         super().__init__()
         self.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.set_vexpand(True)
+        self.set_hexpand(True)
         self.on_movie_selected = on_movie_selected
         self._debounce_timer: int = 0
 
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        self.main_box.set_vexpand(True)
+        self.main_box.set_hexpand(True)
         self.main_box.set_margin_start(24)
         self.main_box.set_margin_end(24)
         self.main_box.set_margin_top(16)
         self.main_box.set_margin_bottom(32)
+
 
         self._build_ui()
         self.set_child(self.main_box)

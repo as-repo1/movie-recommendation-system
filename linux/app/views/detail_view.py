@@ -29,6 +29,8 @@ class DetailView(Gtk.ScrolledWindow):
     ) -> None:
         super().__init__()
         self.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.set_vexpand(True)
+        self.set_hexpand(True)
         self.movie_id = movie_id
         self.on_movie_selected = on_movie_selected
         self.on_back = on_back
@@ -37,10 +39,13 @@ class DetailView(Gtk.ScrolledWindow):
         self.movie_data = engine.get_movie_by_id(movie_id)
 
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        self.main_box.set_vexpand(True)
+        self.main_box.set_hexpand(True)
         self.main_box.set_margin_start(24)
         self.main_box.set_margin_end(24)
         self.main_box.set_margin_top(12)
         self.main_box.set_margin_bottom(32)
+
 
         if self.movie_data:
             self._build_ui()

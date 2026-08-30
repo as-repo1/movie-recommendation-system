@@ -55,6 +55,8 @@ class RecLensWindow(Adw.ApplicationWindow):
 
         # ── Content View Stack & Header ──────────────────────────────────────
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        content_box.set_vexpand(True)
+        content_box.set_hexpand(True)
 
         # HeaderBar
         self.header_bar = Adw.HeaderBar()
@@ -74,6 +76,9 @@ class RecLensWindow(Adw.ApplicationWindow):
 
         # View Stack for Pages
         self.view_stack = Adw.ViewStack()
+        self.view_stack.set_vexpand(True)
+        self.view_stack.set_hexpand(True)
+
 
         # 1. Home View
         self.home_view = HomeView(
