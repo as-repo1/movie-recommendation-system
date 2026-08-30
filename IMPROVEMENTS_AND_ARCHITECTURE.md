@@ -160,7 +160,7 @@ Where:
 
 The hybrid similarity score between source movie $S$ and candidate movie $D$ is calculated as:
 
-$$\text{FinalScore}(S, D) = (1 - \alpha) \cdot \operatorname{CosineSimilarity}(\mathbf{v}_S, \mathbf{v}_D) + \alpha \cdot \text{NormalizedWR}(D)$$
+$$\text{FinalScore}(S, D) = (1 - \alpha) \cdot \text{CosineSimilarity}(\mathbf{v}_S, \mathbf{v}_D) + \alpha \cdot \text{NormalizedWR}(D)$$
 
 *(where $\alpha = 0.20$ ensures quality weighting without overriding semantic relevance).*
 
@@ -168,7 +168,8 @@ $$\text{FinalScore}(S, D) = (1 - \alpha) \cdot \operatorname{CosineSimilarity}(\
 
 To avoid recommendation monotony (e.g., querying *Iron Man* returning only *Iron Man 2*, *Iron Man 3*, *Avengers 1*, *Avengers 2*), we apply **Maximal Marginal Relevance**:
 
-$$\operatorname{MMR} = \operatorname{argmax}_{d_i \in R \setminus S} \left[ \lambda \cdot \operatorname{Sim}_1(d_i, Q) - (1 - \lambda) \max_{d_j \in S} \operatorname{Sim}_2(d_i, d_j) \right]$$
+$$\text{MMR} = \arg\max_{d_i \in R \setminus S} \left[ \lambda \cdot \text{Sim}_1(d_i, Q) - (1 - \lambda) \max_{d_j \in S} \text{Sim}_2(d_i, d_j) \right]$$
+
 
 - $\lambda = 0.75$: Balances $75\%$ query relevance with $25\%$ inter-item diversity.
 - Iteratively constructs the top-$k$ recommendation set $S$ from top candidate pool $R$.
